@@ -952,6 +952,19 @@ class IDF_Scm_Git extends IDF_Scm
 
         $path = $match[2];
  
+        if (!file_exists($this->repo)) {
+            mkdir($this->repo, 0750, true);
+            $out = array();
+            $res = 0;
+            exec(sprintf(Pluf::f('idf_exec_cmd_prefix', '').
+                         Pluf::f('git_path', 'git').' --git-dir=%s init', escapeshellarg($this->repo)),
+                 $out, $res);
+            if ($res != 0) {
+                Pluf_Log::error(array('IDF_Scm_Git::repository', $res, $this->repo));
+                throw new Exception(sprintf('Init repository error, exit status %d.', $res));
+            }
+        }
+
         // update files before delivering them
         if (($path == 'objects/info/pack') || ($path == 'info/refs')) {
             $cmd = sprintf(Pluf::f('idf_exec_cmd_prefix', '').
