@@ -986,7 +986,7 @@ class IDF_Scm_Git extends IDF_Scm
             $response = new Pluf_HTTP_Response_CommandPassThru($path.
                    ' --stateless-rpc '.$this->repo,
                    'application/x-'.$path.'-result');
-            $response->addStdin('php://input');
+            $response->setStdin(fopen('php://input', 'rb'));
             return $response;
 
         // regular file
