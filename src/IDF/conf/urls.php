@@ -245,7 +245,7 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/source/changesrev/$#',
                'model' => 'IDF_Views_Source_Svn',
                'method' => 'changelogRev');
 
-$ctl[] = array('regex' => '#^/p/([\-\w]+)/source/repo/(.*)$#',
+$ctl[] = array('regex' => '#^/r/([\-\w]+)/(.*)$#',
                'base' => $base,
                'model' => 'IDF_Views_Source',
                'method' => 'repository');
