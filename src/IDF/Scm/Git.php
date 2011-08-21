@@ -928,13 +928,13 @@ class IDF_Scm_Git extends IDF_Scm
     public function repository($request, $match)
     {
         // authenticate: authenticate connection through "extra" password
-        if (isset($_SERVER['HTTP_AUTHORIZATION']) && $_SERVER['HTTP_AUTHORIZATION'] != '')
+        if (!empty($_SERVER['HTTP_AUTHORIZATION']))
             list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
 
-        if (isset($_SERVER['PHP_AUTH_USER'])) {
+        if (!empty($_SERVER['PHP_AUTH_USER'])) {
             $sql = new Pluf_SQL('login=%s', array($_SERVER['PHP_AUTH_USER']));
             $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
-            if ((count($users) == 1) && ($users[0]->active)) {
+            if (count($users) == 1 && $users[0]->active) {
                 $user = $users[0];
                 $realkey = substr(sha1($user->password.Pluf::f('secret_key')), 0, 8);
                 if ($_SERVER['PHP_AUTH_PW'] == $realkey) {
@@ -961,9 +961,8 @@ class IDF_Scm_Git extends IDF_Scm
         }
 
         // smart HTTP discovery
-        if (($path == 'info/refs') &&
-          (array_key_exists('service', $request->GET))){
-            $service = $request->GET["service"];
+        if ($path == 'info/refs' && !empty($request->GET['service'])){
+            $service = $request->GET['service'];
             switch ($service) {
             case 'git-upload-pack':
             case 'git-receive-pack':
