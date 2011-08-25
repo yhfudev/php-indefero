@@ -1,0 +1,55 @@
+# Accessing git repositories over HTTP
+
+Starting with indefero 1.2, git repositories are provided via http,
+featuring read-only and read-write access with full integration with
+indefero's access control mechanisms.
+
+## Access git repositories
+
+The repositories are available under http://YOURHOST/BASEPATH/r/PROJECT.
+
+For authentication, use the "extra password" which you can find on your
+profile page.
+
+## Setup
+
+The main thing to setup is git_repositories and git_remote_url in
+src/IDF/conf/idf.php
+
+git_remote_url should match http://YOURHOST/BASEPATH/r/%s, while
+git_repositories points to the local directory supposed to contain the
+repositories like /PATH/TO/REPOSITORIES/%s.git.
+
+## Setup requirements when using PHP over FastCGI
+
+There are a couple of things to setup when using PHP over FastCGI, as compared
+to mod_php or similar integrated mechanisms:
+
+- You will need to setup a RewriteRule for mod_rewrite (in case of Apache,
+  analogous mechanisms might need to be setup for other http daemons), which
+  passes through the Authorization HTTP Header of a request.
+
+  In case of mod_rewrite, the necessary line is:
+      RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
+
+- The FastCGI adaptor must allow large requests to be handled by PHP,
+  otherwise push might fail.
+
+  For mod_fcgid, this is the FcgidMaxRequestLen option, or MaxRequestLen in
+  older versions. Set this option to some large enough value - there is no
+  issue with RAM use, as another option defines the limit after which the
+  request is backed on disk, which can remain small.
+
+## When migrating from syncgit
+
+HTTP access can be used in parallel to syncgit.
+
+If you want to disable syncgit, just undo the changes detailled
+in doc/syncgit.mdtext:
+- In src/IDF/conf/idf.php keep git_repositories
+- In src/IDF/conf/idf.php adapt git_remote_url to http://host/basepath/r/%s 
+- In src/IDF/conf/idf.php remove idf_plugin_syncgit*
+- Remove the cronjob that called gitcron.php
+- Disable the git daemon (eg. /etc/event.d/local-git-daemon)
+- You can remove the git user and group, if you also adapt the git repositories
+  to be owned by the www user.

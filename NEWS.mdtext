@@ -13,6 +13,7 @@ or newer to properly run this version of Indefero!
 - Display monotone file and directory attributes in the tree and file view
   (needs a monotone with an interface version of 13.1 or newer)
 - The context area is now kept in view when a page scrolls down several pages
+- git repositories are now available under /r/projectname/
 
 ## Bugfixes
 
