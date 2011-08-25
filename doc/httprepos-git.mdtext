@@ -29,8 +29,10 @@ to mod_php or similar integrated mechanisms:
   analogous mechanisms might need to be setup for other http daemons), which
   passes through the Authorization HTTP Header of a request.
 
-  In case of mod_rewrite, the necessary line is:
+  In case of mod_rewrite, the necessary line is
+  one of (depending on server configuration):
       RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
+      RewriteRule .* - [E=REMOTE_USER:%{HTTP:Authorization},L]
 
 - The FastCGI adaptor must allow large requests to be handled by PHP,
   otherwise push might fail.

@@ -927,10 +927,15 @@ class IDF_Scm_Git extends IDF_Scm
 
     public function repository($request, $match)
     {
-        // authenticate: authenticate connection through "extra" password
-        if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']))
+        // handle a couple of workarounds for authenticating with FastCGI/PHP
+        if (!empty($_SERVER['HTTP_AUTHORIZATION']))
+            list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+        elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']))
             list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['REDIRECT_HTTP_AUTHORIZATION'], 6)));
+        elseif (!empty($_SERVER['REDIRECT_REMOTE_USER']))
+            list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['REDIRECT_REMOTE_USER'], 6)));
 
+        // authenticate: authenticate connection through "extra" password
         if (!empty($_SERVER['PHP_AUTH_USER'])) {
             $sql = new Pluf_SQL('login=%s', array($_SERVER['PHP_AUTH_USER']));
             $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
