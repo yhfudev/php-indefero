@@ -987,6 +987,7 @@ class IDF_Scm_Git extends IDF_Scm
                 $content = sprintf('%04x',strlen($service)+15).
                          '# service='.$service."\n0000";
                 $content .= self::shell_exec('IDF_Scm_Git::repository',
+                         Pluf::f('idf_exec_cmd_prefix', '').
                          $service.' --stateless-rpc --advertise-refs '.
                          $this->repo);
                 $response = new Pluf_HTTP_Response($content,
@@ -1001,7 +1002,8 @@ class IDF_Scm_Git extends IDF_Scm
         // smart HTTP RPC
         case 'git-upload-pack':
         case 'git-receive-pack':
-            $response = new Pluf_HTTP_Response_CommandPassThru($path.
+            $response = new Pluf_HTTP_Response_CommandPassThru(
+                   Pluf::f('idf_exec_cmd_prefix', '').$path.
                    ' --stateless-rpc '.$this->repo,
                    'application/x-'.$path.'-result');
             $response->setStdin(fopen('php://input', 'rb'));
