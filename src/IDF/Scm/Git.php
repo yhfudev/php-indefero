@@ -928,8 +928,8 @@ class IDF_Scm_Git extends IDF_Scm
     public function repository($request, $match)
     {
         // authenticate: authenticate connection through "extra" password
-        if (!empty($_SERVER['HTTP_AUTHORIZATION']))
-            list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+        if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']))
+            list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['REDIRECT_HTTP_AUTHORIZATION'], 6)));
 
         if (!empty($_SERVER['PHP_AUTH_USER'])) {
             $sql = new Pluf_SQL('login=%s', array($_SERVER['PHP_AUTH_USER']));
