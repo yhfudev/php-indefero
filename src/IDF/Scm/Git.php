@@ -982,8 +982,14 @@ class IDF_Scm_Git extends IDF_Scm
         if ($path == 'info/refs' && !empty($request->GET['service'])){
             $service = $request->GET['service'];
             switch ($service) {
-            case 'git-upload-pack':
             case 'git-receive-pack':
+                if (IDF_Precondition::projectMemberOrOwner($request) !== true) {
+                    $response = new Pluf_HTTP_Response("");
+                    $response->status_code = 401;
+                    $response->headers['WWW-Authenticate']='Basic realm="git for '.$this->project.'"';
+                    return $response;
+                }
+            case 'git-upload-pack':
                 $content = sprintf('%04x',strlen($service)+15).
                          '# service='.$service."\n0000";
                 $content .= self::shell_exec('IDF_Scm_Git::repository',
@@ -1000,8 +1006,14 @@ class IDF_Scm_Git extends IDF_Scm
 
         switch($path) {
         // smart HTTP RPC
-        case 'git-upload-pack':
         case 'git-receive-pack':
+                if (IDF_Precondition::projectMemberOrOwner($request) !== true) {
+                    $response = new Pluf_HTTP_Response("");
+                    $response->status_code = 401;
+                    $response->headers['WWW-Authenticate']='Basic realm="git for '.$this->project.'"';
+                    return $response;
+                }
+        case 'git-upload-pack':
             $response = new Pluf_HTTP_Response_CommandPassThru(
                    Pluf::f('idf_exec_cmd_prefix', '').$path.
                    ' --stateless-rpc '.$this->repo,
