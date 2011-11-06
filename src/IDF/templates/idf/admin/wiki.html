@@ -16,6 +16,34 @@
 </td>
 </tr>
 <tr>
+<td colspan="2">{$form.f.wiki_default_page.labelTag}:<br />
+{if $form.f.wiki_default_page.errors}{$form.f.wiki_default_page.fieldErrors}{/if}
+{$form.f.wiki_default_page|unsafe}
+</td>
+<script type="text/javascript" src="{media '/idf/js/jquery.bgiframe.min.js'}"></script>
+<script type="text/javascript" src="{media '/idf/js/jquery.autocomplete.min.js'}"></script>
+<script type="text/javascript" charset="utf-8">
+{literal}
+$(document).ready(function(){
+  var auto_wiki_page_name = [{/literal}{$auto_wiki_page_name|safe}{literal}];
+  $("#id_wiki_default_page").autocomplete(auto_wiki_page_name, {
+        minChars: 0,
+        width: 310,
+        matchContains: true,
+        max: 50,
+        highlightItem: false,
+        formatItem: function(row, i, max, term) {
+            return row.to.replace(new RegExp("(" + term + ")", "gi"), "<strong>$1</strong>") + "  <span style='font-size: 80%;'>" + row.name + "</span>";
+        },
+        formatResult: function(row) {
+            return row.to;
+        }
+    });
+});
+{/literal}
+</script>
+</tr>
+<tr>
 <td colspan="2">
 <input type="submit" value="{trans 'Save Changes'}" name="submit" /> 
 </td>

@@ -41,6 +41,7 @@ Phase:Support        = Plans for user support and advocacy
 Deprecated           = Most users should NOT reference this';
 
     const init_one_max = '';
+    const wiki_default_page = '';
 
     public function initFields($extra=array())
     {
@@ -59,7 +60,29 @@ Deprecated           = Most users should NOT reference this';
                                             'initial' => self::init_one_max, 
                                             'widget_attrs' => array('size' => 60),
                                             ));
+                                            
+        $this->fields['wiki_default_page'] = new Pluf_Form_Field_Varchar(
+                                      array('required' => false,
+                                            'label' => __('Set a default wiki page instead of the page listing.'),
+                                            'initial' => self::wiki_default_page, 
+                                            'widget_attrs' => array('size' => 60),
+                                            ));
 
+    }
+    
+    public function clean_wiki_default_page()
+    {
+        $pageName = trim($this->cleaned_data['wiki_default_page']);
+        if (empty($pageName)) {
+            return '';
+        }
+        $sql = new Pluf_SQL('project=%s AND title=%s', array($this->data['projectId'], $pageName));
+        $pages = Pluf::factory('IDF_WikiPage')->getList(array('filter'=>$sql->gen()));
+        
+        if ($pages->count() != 1) {
+            return '';
+        }
+        return $pageName;
     }
 }
 
