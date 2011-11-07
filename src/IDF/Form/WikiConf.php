@@ -63,7 +63,7 @@ Deprecated           = Most users should NOT reference this';
                                             
         $this->fields['wiki_default_page'] = new Pluf_Form_Field_Varchar(
                                       array('required' => false,
-                                            'label' => __('Set a default wiki page instead of the page listing.'),
+                                            'label' => __('Set a default wiki page instead of the page listing'),
                                             'initial' => self::wiki_default_page, 
                                             'widget_attrs' => array('size' => 60),
                                             ));
