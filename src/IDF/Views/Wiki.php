@@ -35,7 +35,43 @@ class IDF_Views_Wiki
      * View list of issues for a given project.
      */
     public $index_precond = array('IDF_Precondition::accessWiki');
-    public function index($request, $match, $api=false)
+    public function index($request, $match)
+    {
+        $project = $request->project;
+        
+        // Search for the default page
+        $conf = new IDF_Conf();
+        $conf->setProject($project);
+        $page = $conf->getVal('wiki_default_page', null); 
+        if ($page === null) {
+            $url =  Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::listing', 
+                                             array($project->shortname));
+            return new Pluf_HTTP_Response_Redirect($url);        
+        }
+        
+        // Find the page
+        $sql = new Pluf_SQL('project=%s AND title=%s', 
+                            array($project->id, $page));
+        $pages = Pluf::factory('IDF_WikiPage')->getList(array('filter'=>$sql->gen()));
+        if ($pages->count() != 1) {
+            // The default page have been delete
+            $conf->setVal('wiki_default_page', null);   
+            $url =  Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::listing', 
+                                             array($project->shortname));
+            return new Pluf_HTTP_Response_Redirect($url);   
+        }
+        $page = $pages[0];
+        $url =  Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::view', 
+                                         array($project->shortname, $page->title));
+        return new Pluf_HTTP_Response_Redirect($url);
+    }
+
+
+    /**
+     * View list of issues for a given project.
+     */
+    public $listing_precond = array('IDF_Precondition::accessWiki');
+    public function listing($request, $match, $api=false)
     {
         $prj = $request->project;
         $title = sprintf(__('%s Documentation'), (string) $prj);
@@ -82,7 +118,7 @@ class IDF_Views_Wiki
     {
         $prj = $request->project;
         if (!isset($request->REQUEST['q']) or trim($request->REQUEST['q']) == '') {
-            $url =  Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::index', 
+            $url =  Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::listing', 
                                              array($prj->shortname));
             return new Pluf_HTTP_Response_Redirect($url);
         }
@@ -182,7 +218,7 @@ class IDF_Views_Wiki
                 $urlpage = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::view', 
                                                     array($prj->shortname, $page->title));
                 $request->user->setMessage(sprintf(__('The page <a href="%s">%s</a> has been created.'), $urlpage, Pluf_esc($page->title)));
-                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::index', 
+                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::listing', 
                                                 array($prj->shortname));
                 return new Pluf_HTTP_Response_Redirect($url);
             } elseif (isset($request->POST['preview'])) {
@@ -320,7 +356,7 @@ class IDF_Views_Wiki
                 $urlpage = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::view', 
                                                     array($prj->shortname, $page->title));
                 $request->user->setMessage(sprintf(__('The page <a href="%s">%s</a> has been updated.'), $urlpage, Pluf_esc($page->title)));
-                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::index', 
+                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::listing', 
                                                 array($prj->shortname));
                 return new Pluf_HTTP_Response_Redirect($url);
             } elseif (isset($request->POST['preview'])) {
@@ -358,7 +394,7 @@ class IDF_Views_Wiki
             if ($form->isValid()) {
                 $form->save();
                 $request->user->setMessage(__('The documentation page has been deleted.'));
-                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::index', 
+                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::listing', 
                                                 array($prj->shortname));
                 return new Pluf_HTTP_Response_Redirect($url);
             }

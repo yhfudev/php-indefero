@@ -418,8 +418,17 @@ class IDF_Views_Project
         $title = sprintf(__('%s Documentation Configuration'), (string) $prj);
         $conf = new IDF_Conf();
         $conf->setProject($prj);
+        
+        // Get the Wiki list pages
+        $sql = new Pluf_SQL('project=%s', array($prj->id));
+        $pages = Pluf::factory('IDF_WikiPage')->getList(array('filter'=>$sql->gen()));
+        $auto_wiki_page_name = "";
+        foreach ($pages as $p) {
+            $auto_wiki_page_name .= '{ name: "' . $p->summary . '", to: "' . $p->title . '" }, ';
+        }
+        
         if ($request->method == 'POST') {
-            $form = new IDF_Form_WikiConf($request->POST);
+            $form = new IDF_Form_WikiConf(array_merge($request->POST, array('projectId' => $prj->id)));
             if ($form->isValid()) {
                 foreach ($form->cleaned_data as $key=>$val) {
                     $conf->setVal($key, $val);
@@ -431,7 +440,7 @@ class IDF_Views_Project
             }
         } else {
             $params = array();
-            $keys = array('labels_wiki_predefined', 'labels_wiki_one_max');
+            $keys = array('labels_wiki_predefined', 'labels_wiki_one_max', 'wiki_default_page');
             foreach ($keys as $key) {
                 $_val = $conf->getVal($key, false);
                 if ($_val !== false) {
@@ -447,6 +456,7 @@ class IDF_Views_Project
                                                array(
                                                      'page_title' => $title,
                                                      'form' => $form,
+                                                     'auto_wiki_page_name' => $auto_wiki_page_name,
                                                      ),
                                                $request);
     }
