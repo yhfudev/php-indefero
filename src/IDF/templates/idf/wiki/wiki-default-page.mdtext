@@ -1,0 +1,17 @@
+{aurl 'syntax_url', 'IDF_Views_Wiki::view', array($project.shortname, 'markdown-help')}
+{aurl 'wiki_add', 'IDF_Views_Wiki::create', array($project.shortname)}
+{aurl 'wiki_update', 'IDF_Views_Wiki::update', array($project.shortname, 'summary-default')}
+{aurl 'wiki_admin', 'IDF_Views_Project::adminWiki', array($project.shortname)}
+{blocktrans}
+Welcome on the documentation section of the project {$project->name}.
+All documentation page use the markdown syntax, you can find help about this syntax on this [page]({$syntax_url}).
+
+- You can another Wiki page [here]({$wiki_add}).
+- You can update this page [here]({$wiki_update}).
+- You can select an other default wiki page [here]({$wiki_admin}). You need to be admin.
+
+{*
+All modification on wiki pages are saved, and you can see this history on the detail part of each pages.
+The history of the current page can be see here.
+*}
+{/blocktrans}
