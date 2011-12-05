@@ -1,6 +1,6 @@
-{aurl 'syntax_url', 'IDF_Views_Wiki::view', array($project.shortname, 'markdown-help')}
+{aurl 'syntax_url', 'IDF_Views_Wiki::view', array($project.shortname, 'IndeferoMarkdownHelp')}
 {aurl 'wiki_add', 'IDF_Views_Wiki::create', array($project.shortname)}
-{aurl 'wiki_update', 'IDF_Views_Wiki::update', array($project.shortname, 'summary-default')}
+{aurl 'wiki_update', 'IDF_Views_Wiki::update', array($project.shortname, 'IndeferoSummaryDefault')}
 {aurl 'wiki_admin', 'IDF_Views_Project::adminWiki', array($project.shortname)}
 {blocktrans}
 Welcome on the documentation section of the project {$project->name}.
