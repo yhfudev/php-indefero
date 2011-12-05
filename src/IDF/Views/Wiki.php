@@ -262,7 +262,13 @@ class IDF_Views_Wiki
         if (isset($request->GET['rev']) and preg_match('/^[0-9]+$/', $request->GET['rev'])) {
             $oldrev = Pluf_Shortcuts_GetObjectOr404('IDF_WikiRevision',
                                                     $request->GET['rev']);
-            if ($oldrev->wikipage != $page->id or $oldrev->is_head == true) {
+            if ($oldrev->is_head == true) {
+                $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::view', 
+                                                array($prj->shortname, $page->title));
+                return new Pluf_HTTP_Response_Redirect($url);
+            }
+                                                    
+            if ($oldrev->wikipage != $page->id) {
                 return new Pluf_HTTP_Response_NotFound($request);
             }
         }
@@ -284,6 +290,39 @@ class IDF_Views_Wiki
                                                      'revs' => $revs,
                                                      'tags' => $tags,
                                                      'deprecated' => $dep,
+                                                     ),
+                                               $request);
+    }
+
+    /**
+     * See the revision list of a documentation page.
+     */
+    public $history_precond = array('IDF_Precondition::accessWiki');
+    public function history($request, $match)
+    {
+        $prj = $request->project;
+        // Find the page
+        $sql = new Pluf_SQL('project=%s AND title=%s', 
+                            array($prj->id, $match[2]));
+        $pages = Pluf::factory('IDF_WikiPage')->getList(array('filter'=>$sql->gen()));
+        if ($pages->count() != 1) {
+            return new Pluf_HTTP_Response_NotFound($request);
+        }
+        $page = $pages[0];
+        $ptags = self::getWikiTags($prj);
+        $dtag = array_pop($ptags); // The last tag is the deprecated tag.
+        $tags = $page->get_tags_list();
+        $dep = Pluf_Model_InArray($dtag, $tags);  
+        $title = sprintf(__('History of the wiki page %s'), $page->title);
+        $revision = $page->get_current_revision();
+        $revs = $page->get_revisions_list(array('order' => 'creation_dtime DESC'));
+        return Pluf_Shortcuts_RenderToResponse('idf/wiki/history.html',
+                                               array(
+                                                     'page' => $page,
+                                                     'page_title' => $title,
+                                                     'rev' => $revision,
+                                                     'revs' => $revs,
+                                                     'tags' => $tags,
                                                      ),
                                                $request);
     }
@@ -325,6 +364,57 @@ class IDF_Views_Wiki
                                                      'tags' => $page->get_tags_list(),
                                                      ),
                                                $request);
+    }
+
+    public $restoreRev_precond = array('IDF_Precondition::accessWiki',
+                                      'IDF_Precondition::projectMemberOrOwner');
+    public function restoreRev($request, $match)
+    {
+        $prj = $request->project;
+        $oldrev = Pluf_Shortcuts_GetObjectOr404('IDF_WikiRevision', $match[2]);
+        $page = $oldrev->get_wikipage();
+        $prj->inOr404($page);
+        
+        // Prevent restore the current version
+        if ($oldrev->is_head == true) {
+            $request->user->setMessage(__('This revision is already the current revision.'));
+            $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::view', 
+                                            array($prj->shortname, $page->title));
+            return new Pluf_HTTP_Response_Redirect($url);
+        }
+        
+        $params = array(
+            'project' => $prj,
+            'user' => $request->user,
+            'page' => $page,
+        );
+        
+        $data = array(
+            'title' => $page->title,
+            'summary' => $page->summary,
+            'content' => $oldrev->content,
+            'comment' => sprintf(__('Restore old revision (%s)'), $oldrev->id),
+        );
+        
+        $tags = $page->get_tags_list();
+        for ($i=1;$i<4;$i++) {
+            if (isset($tags[$i-1])) {
+                if ($tags[$i-1]->class != 'Other') {
+                    $data['label'.$i] = (string) $tags[$i-1];
+                } else {
+                    $data['label'.$i] = $tags[$i-1]->name;
+                }
+            } else {
+                $data['label'.$i] = '';
+            }
+        }
+        
+        $form = new IDF_Form_WikiUpdate($data, $params);
+        $page = $form->save();
+
+        $url = Pluf_HTTP_URL_urlForView('IDF_Views_Wiki::view', 
+                                        array($prj->shortname, $page->title));
+        return new Pluf_HTTP_Response_Redirect($url);
     }
 
     /**

@@ -1,0 +1,38 @@
+{extends "idf/wiki/base.html"}
+
+{block extraheader}
+<meta name="ROBOTS" content="NOINDEX" />
+{/block}
+
+{block docclass}yui-t3{assign $inView=true}{/block}
+
+{block body}
+<table class="recent-issues">
+<tr><th>Id</th><th>Who</th><th>When</th><th>Summary</th><th>Actions</th></tr>
+{foreach $revs as $r}
+{ashowuser 'submitter', $rev.get_submitter(), $request}
+{aurl 'view_url', 'IDF_Views_Wiki::view', array($project.shortname, $page.title), array('rev' => $r->id)}
+{aurl 'delete_url', 'IDF_Views_Wiki::deleteRev', array($project.shortname, $r->id)}
+{aurl 'restore_url', 'IDF_Views_Wiki::restoreRev', array($project.shortname, $r->id)}
+<tr><td><a href="{$view_url}">{$r->id}</a></td><td>{$submitter}</td><td class="a-c">{$r->creation_dtime|dateago}</td><td>{$r->summary}</td><td>{if $r->is_head == false}<a href="{$view_url}">View</a> - <a href="{$delete_url}">Delete</a> - <a href="{$restore_url}">Restore</a>{/if}</td></tr>
+{/foreach}
+</table>
+{aurl 'add_rev', 'IDF_Views_Wiki::update', array($project.shortname, $page.title)}
+<p><a href="{$add_rev}"><img style="vertical-align: text-bottom;" src="{media '/idf/img/add.png'}" alt="+" align="bottom"></a> <a href="{$add_rev}">{trans 'Update This Page'}</a></p>
+{/block}
+
+
+{block context}
+{ashowuser 'submitter', $page.get_submitter(), $request}
+<p><strong>{trans 'Created:'}</strong> <span class="nobrk">{$page.creation_dtime|dateago}</span><br /><span class="nobrk">{blocktrans}by {$submitter}{/blocktrans}</span></p>
+{if $rev.creation_dtime != $page.creation_dtime}<p>{ashowuser 'submitter', $rev.get_submitter(), $request}
+<strong>{trans 'Updated:'}</strong> <span class="nobrk">{$rev.creation_dtime|dateago}</span><br /><span class="nobrk">{blocktrans}by {$submitter}{/blocktrans}</span></p>{/if}
+{if $tags.count()}
+<p>
+<strong>{trans 'Labels:'}</strong><br />
+{foreach $tags as $tag}
+<span class="label"><strong>{$tag.class}:</strong>{$tag.name}</span><br />
+{/foreach}
+</p>{/if}
+<p class="helptext"><a href="{url 'IDF_Views_Wiki::view', array($project.shortname, $page.title)}">{trans 'See current revision'}</a></p>
+{/block}

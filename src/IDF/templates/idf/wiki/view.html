@@ -52,9 +52,6 @@ by {$submitter}.{/blocktrans}</p>
 {/foreach}
 </p>{/if}
 {if $revs.count() > 0}
-<p><strong>{trans 'Old Revisions'}</strong></p>
-<ul>{foreach $revs as $old}
-<li><a href="{url 'IDF_Views_Wiki::view', array($project.shortname, $page.title), array('rev'=>$old.id)}">{$old.summary}</a></li>
-{/foreach}</ul>
+<p class="helptext"><a href="{url 'IDF_Views_Wiki::history', array($project.shortname, $page.title)}">{trans 'See older revision'}</a></p>
 {/if}
 {/block}

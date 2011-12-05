@@ -292,10 +292,20 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/delrev/(\d+)/$#',
                'model' => 'IDF_Views_Wiki',
                'method' => 'deleteRev');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/resrev/(\d+)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'restoreRev');
+               
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/delete/(\d+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
                'method' => 'delete');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/history/(.*)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'history');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/page/(.*)/$#',
                'base' => $base,
