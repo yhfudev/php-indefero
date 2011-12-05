@@ -221,4 +221,51 @@ class IDF_WikiPage extends Pluf_Model
         $tmpl = new Pluf_Template('idf/wiki/feedfragment.xml');
         return $tmpl->render($context);
     }
+
+    function projectCreated($signal, &$params)
+    {
+        $project = $params['project'];
+        $users = $project->getMembershipData();
+        $user = $users['owners'][0];
+        $conf = $project->getConf();
+        
+        // Insert default wiki page
+        $tmpl = new Pluf_Template('idf/wiki/wiki-default-page.mdtext');
+        $context = new Pluf_Template_Context(array('project' => $project));
+        $content = $tmpl->render($context);
+        $page = new IDF_WikiPage();
+        $page->project = $project;
+        $page->submitter = $user;
+        $page->summary = __('Default page for your project Wiki.');
+        $page->title = 'IndeferoSummaryDefault';
+        $page->create();
+        $rev = new IDF_WikiRevision();
+        $rev->wikipage = $page;
+        $rev->content = $content;
+        $rev->submitter = $user;
+        $rev->summary = __('Initial page creation');
+        $rev->create();
+        $rev->notify($project->getConf());
+
+        // Insert markdown help wiki page
+        $tmpl = new Pluf_Template('idf/wiki/wiki-markdown-help.mdtext');
+        $context = new Pluf_Template_Context(array('project' => $project));
+        $content = $tmpl->render($context);
+        $page = new IDF_WikiPage();
+        $page->project = $project;
+        $page->submitter = $user;
+        $page->summary = __('Help about Markdown syntax.');
+        $page->title = 'IndeferoMarkdownHelp';
+        $page->create();
+        $rev = new IDF_WikiRevision();
+        $rev->wikipage = $page;
+        $rev->content = $content;
+        $rev->submitter = $user;
+        $rev->summary = __('Initial page creation');
+        $rev->create();
+        $rev->notify($project->getConf());
+        
+        $conf->setVal('wiki_default_page', 'IndeferoSummaryDefault');
+        $conf->setVal('labels_wiki_predefined', IDF_Form_WikiConf::init_predefined);  
+    }
 }

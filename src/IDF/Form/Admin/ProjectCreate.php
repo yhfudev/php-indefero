@@ -339,7 +339,6 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
                 $conf->setVal($prop, $tmplconf->getVal($prop, $def));
             }
         }
-        $project->created();
 
         if ($this->cleaned_data['template'] == '--') {
             IDF_Form_MembersConf::updateMemberships($project,
@@ -350,46 +349,7 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
                                                     $tmpl->getMembershipData('string'));
         }
         $project->membershipsUpdated();
-        
-        
-        // Insert default wiki page
-        $tmpl = new Pluf_Template('idf/wiki/wiki-default-page.mdtext');
-        $context = new Pluf_Template_Context(array('project' => $project));
-        $content = $tmpl->render($context);
-        $page = new IDF_WikiPage();
-        $page->project = $project;
-        $page->submitter = $this->user;
-        $page->summary = __('This is the default page for your project Wiki.');
-        $page->title = 'summary-default';
-        $page->create();
-        $rev = new IDF_WikiRevision();
-        $rev->wikipage = $page;
-        $rev->content = $content;
-        $rev->submitter = $this->user;
-        $rev->summary = __('Initial page creation');
-        $rev->create();
-        $rev->notify($project->getConf());
-
-        // Insert markdown help wiki page
-        $tmpl = new Pluf_Template('idf/wiki/wiki-markdown-help.mdtext');
-        $context = new Pluf_Template_Context(array('project' => $project));
-        $content = $tmpl->render($context);
-        $page = new IDF_WikiPage();
-        $page->project = $project;
-        $page->submitter = $this->user;
-        $page->summary = __('Help about Markdown syntax.');
-        $page->title = 'markdown-help';
-        $page->create();
-        $rev = new IDF_WikiRevision();
-        $rev->wikipage = $page;
-        $rev->content = $content;
-        $rev->submitter = $this->user;
-        $rev->summary = __('Initial page creation');
-        $rev->create();
-        $rev->notify($project->getConf());
-        
-        // To review : 
-        // $conf->setVal('wiki_default_page', 'summary-default');
+        $project->created();
         
         return $project;
     }

@@ -115,4 +115,10 @@ Pluf_Signal::connect('queuecron.php::run',
 Pluf_Signal::connect('IDF_Queue::processItem',
                      Pluf::f('idf_hook_process_item',
                              array('IDF_Webhook', 'process')));
+                             
+#
+# Wiki init
+Pluf_Signal::connect('IDF_Project::created',
+                     array('IDF_WikiPage', 'projectCreated'));
+                     
 return $m;
