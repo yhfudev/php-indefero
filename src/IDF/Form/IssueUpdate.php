@@ -103,6 +103,12 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
                                                        'size' => 15,
                                                                     ),
                                             ));
+            $this->fields['due_dtime'] = new Pluf_Form_Field_Datetime(
+                                array('required' => false,
+                                    'label' => __('Due Date'),
+                                    'initial' => $this->issue->due_dtime,
+                                    'widget_attrs' => array('size' => 15,),
+                                    ));
 
             $idx = 0;
             // note: clean_relation_type0 and clean_relation_issue0 already
@@ -385,6 +391,10 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
                 or ((!is_null($owner) and !is_null($this->issue->get_owner())) and $owner->id != $this->issue->get_owner()->id)) {
                 $changes['ow'] = (is_null($owner)) ? '---' : $owner->login;
             }
+            $due_dtime = $this->cleaned_data['due_dtime'];
+            if (trim($this->issue->due_dtime) != trim($this->cleaned_data['due_dtime'])) {
+                $changes['du'] = trim($this->cleaned_data['due_dtime']);
+            }
             // Issue relations - additions
             foreach ($this->cleaned_data['_added_issue_relations'] as $verb => $ids) {
                 $other_verb = $this->relation_types[$verb];
@@ -431,6 +441,7 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
             $this->issue->summary = trim($this->cleaned_data['summary']);
             $this->issue->status = $status;
             $this->issue->owner = $owner;
+            $this->issue->due_dtime = $due_dtime;
         }
         // Create the comment
         $comment = new IDF_IssueComment();

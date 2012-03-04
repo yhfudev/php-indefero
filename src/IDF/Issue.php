@@ -91,6 +91,12 @@ class IDF_Issue extends Pluf_Model
                                   'model' => 'IDF_Tag',
                                   'verbose' => __('labels'),
                                   ),
+                            'due_dtime' =>
+                            array(
+                                  'type' => 'Pluf_DB_Field_Datetime',
+                                  'blank' => true,
+                                  'verbose' => __('due date'),
+                                  ),
                             'status' =>
                             array(
                                   'type' => 'Pluf_DB_Field_Foreignkey',

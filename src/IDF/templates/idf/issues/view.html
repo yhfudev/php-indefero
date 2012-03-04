@@ -128,6 +128,11 @@
 {$form.f.owner|unsafe}
 </td>
 </tr>
+<th>{$form.f.due_dtime.labelTag}:</th>
+<td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
+{$form.f.due_dtime|unsafe}
+</td>
+<tr>
 <tr>
 <th>{$form.f.relation_type0.labelTag}:</th>
 <td>
