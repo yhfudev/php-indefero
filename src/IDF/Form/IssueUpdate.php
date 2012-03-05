@@ -272,6 +272,9 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
                 or ((!is_null($owner) and !is_null($this->issue->get_owner())) and $owner->id != $this->issue->get_owner()->id)) {
                 return $this->cleaned_data;
             }
+            if (trim($this->issue->due_dtime) != trim($this->cleaned_data['due_dtime'])) {
+                return $this->cleaned_data;
+            }
             $tags = array();
             for ($i=1;$i<7;$i++) {
                 if (strlen($this->cleaned_data['label'.$i]) > 0) {
@@ -391,7 +394,6 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
                 or ((!is_null($owner) and !is_null($this->issue->get_owner())) and $owner->id != $this->issue->get_owner()->id)) {
                 $changes['ow'] = (is_null($owner)) ? '---' : $owner->login;
             }
-            $due_dtime = $this->cleaned_data['due_dtime'];
             if (trim($this->issue->due_dtime) != trim($this->cleaned_data['due_dtime'])) {
                 $changes['du'] = trim($this->cleaned_data['due_dtime']);
             }
@@ -441,7 +443,7 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
             $this->issue->summary = trim($this->cleaned_data['summary']);
             $this->issue->status = $status;
             $this->issue->owner = $owner;
-            $this->issue->due_dtime = $due_dtime;
+            $this->issue->due_dtime = $this->cleaned_data['due_dtime'];
         }
         // Create the comment
         $comment = new IDF_IssueComment();

@@ -153,6 +153,8 @@ class IDF_IssueComment extends Pluf_Model
                     $out .= __('Status:'); break;
                 case 'ow':
                     $out .= __('Owner:'); break;
+                case 'du':
+                    $out .= __('Due Date:'); break;
                 case 'lb':
                     $out .= __('Labels:'); break;
                 case 'rel':
