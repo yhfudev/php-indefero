@@ -668,6 +668,7 @@ class IDF_Views_Issue
                                                      'previous_issue_id' => $previous_issue_id,
                                                      'next_issue_id' => $next_issue_id,
                                                      'related_issues' => $related_issues,
+                                                     'date_today' => date('Y-m-d 23:59'),
                                                      ),
                                                $arrays),
                                                $request);

@@ -131,6 +131,7 @@
 <th>{$form.f.due_dtime.labelTag}:</th>
 <td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
 {$form.f.due_dtime|unsafe}
+<a href="#" rel="{$date_today}" id="due_dtime_today">Today</a>
 </td>
 <tr>
 <tr>
@@ -214,7 +215,10 @@
 <script type="text/javascript">
 {literal}
 $(document).ready(function(){
-
+    $("#due_dtime_today").click(function(){
+        $('#id_due_dtime').val($(this).attr('rel'));
+        return false;
+    });
     // Hide the upload forms, we insert before the first attach file
     // row an "Attach File" little link.
     // We hide all the rows.
