@@ -7,6 +7,7 @@ to you:{/blocktrans}
 {trans 'Project:'} {$project.name|safe}
 {trans 'Status:'} {$issue.get_status.name|safe}
 {trans 'Reported by:'} {$issue.get_submitter|safe}
+{if $issue.due_dtime}{trans 'Due date:'} {$issue.due_dtime|safe}{/if}
 {assign $tags = $issue.get_tags_list()}{if $tags.count()}{trans 'Labels:'}
 {foreach $tags as $tag} {$tag.class|safe}:{$tag.name|safe}
 {/foreach}{/if}
