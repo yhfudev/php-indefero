@@ -215,6 +215,16 @@
 <script type="text/javascript">
 {literal}
 $(document).ready(function(){
+    $("#id_due_dtime").datepicker({
+        changeYear: true,
+        changeMonth: true,
+        yearRange: '-0:+5',
+        constrainInput: true,
+        dateFormat: 'yy-mm-dd',
+        onSelect: function(dateText, inst) {
+            this.value = dateText + ' 23:59';
+        }
+    });
     $("#due_dtime_today").click(function(){
         $('#id_due_dtime').val($(this).attr('rel'));
         return false;

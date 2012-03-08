@@ -66,6 +66,7 @@
 <th>{$form.f.due_dtime.labelTag}:</th>
 <td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
 {$form.f.due_dtime|unsafe}
+<a href="#" rel="{$date_today}" id="due_dtime_today">Today</a>
 </td>
 <tr>
 <th>{$form.f.relation_type0.labelTag}:</th>
@@ -113,7 +114,20 @@
 <script type="text/javascript">
 document.getElementById('id_summary').focus();{literal}
 $(document).ready(function(){
-
+    $("#id_due_dtime").datepicker({
+        changeYear: true,
+        changeMonth: true,
+        yearRange: '-0:+5',
+        constrainInput: true,
+        dateFormat: 'yy-mm-dd',
+        onSelect: function(dateText, inst) {
+            this.value = dateText + ' 23:59';
+        }
+    });
+    $("#due_dtime_today").click(function(){
+        $('#id_due_dtime').val($(this).attr('rel'));
+        return false;
+    });
     // Hide the upload forms, we insert before the first attach file
     // row an "Attach File" little link.
     // We hide all the rows.
