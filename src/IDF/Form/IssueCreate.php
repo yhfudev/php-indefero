@@ -114,7 +114,7 @@ class IDF_Form_IssueCreate extends Pluf_Form
                                             ));
             $this->fields['due_dtime'] = new Pluf_Form_Field_Datetime(
                                           array('required' => false,
-                                                'label' => __('Due Date'),
+                                                'label' => __('Due date'),
                                                 'initial' => '',
                                                 'widget_attrs' => array('size' => 15,),
                                               ));

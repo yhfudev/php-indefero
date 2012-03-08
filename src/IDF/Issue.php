@@ -95,6 +95,7 @@ class IDF_Issue extends Pluf_Model
                             array(
                                   'type' => 'Pluf_DB_Field_Datetime',
                                   'blank' => true,
+                                  'is_null' => true,
                                   'verbose' => __('due date'),
                                   ),
                             'status' =>
