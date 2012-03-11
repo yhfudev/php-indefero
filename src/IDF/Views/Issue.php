@@ -446,6 +446,7 @@ class IDF_Views_Issue
                                     'page_title' => $title,
                                     'preview' => $preview,
                                     'issue' => new IDF_Issue(),
+                                    'date_today' => date('Y-m-d 23:59')
                                     ),
                               self::autoCompleteArrays($prj)
                               );
