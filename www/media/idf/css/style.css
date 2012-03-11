@@ -180,6 +180,14 @@ table.recent-issues td {
   vertical-align: top;
 }
 
+table.recent-issues td span.overdue {
+    font-weight: bold;
+    background-color: #c00;
+    color: #fff;
+    padding: 0 2px;
+    margin-left: 5px;
+}
+
 table.recent-issues tfoot th {
   text-align: right;
 }

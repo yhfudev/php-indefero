@@ -61,9 +61,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -220,9 +221,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -302,9 +304,10 @@ class IDF_Views_Issue
              array('summary', 'IDF_Views_Issue_SummaryAndLabelsUnknownProject', __('Summary')),
              array('project', 'Pluf_Paginator_FkToString', __('Project')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'project', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'project', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -390,9 +393,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -542,6 +546,7 @@ class IDF_Views_Issue
             'id' => __('Id'),
             array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
             array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+            array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
             array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
         ));
         // disable paginating
@@ -766,9 +771,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -825,9 +831,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -1017,6 +1024,14 @@ function IDF_Views_Issue_SummaryAndLabelsUnknownProject($field, $issue, $extra='
 }
 
 /**
+ * Get the date value for the Due Date table column
+ */
+function IDF_Views_Issue_DueDate($field, $issue, $extra='')
+{
+    return $issue->$field;
+}
+
+/**
  * Display the summary of an issue, then on a new line, display the
  * list of labels with a link to a view "by label only".
  *
@@ -1038,8 +1053,11 @@ function IDF_Views_Issue_SummaryAndLabels($field, $issue, $extra='')
         $s = '<img style="vertical-align: text-bottom;" src="'.Pluf_Template_Tag_MediaUrl::url('/idf/img/star.png').'" alt="'.__('On your watch list.').'" /> ';
     }
     $out = '';
+    if('' != $issue->due_dtime and (time() >= strtotime($issue->due_dtime))) {
+        $out = ' <span class="overdue">overdue</span>';
+    }
     if (count($tags)) {
-        $out = '<br /><span class="note">'.implode(', ', $tags).'</span>';
+        $out .= '<br /><span class="note">'.implode(', ', $tags).'</span>';
     }
     return $s.sprintf('<a href="%s">%s</a>', $edit, Pluf_esc($issue->summary)).$out;
 }
