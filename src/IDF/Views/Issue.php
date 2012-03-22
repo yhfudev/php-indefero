@@ -1054,7 +1054,8 @@ function IDF_Views_Issue_SummaryAndLabels($field, $issue, $extra='')
         $s = '<img style="vertical-align: text-bottom;" src="'.Pluf_Template_Tag_MediaUrl::url('/idf/img/star.png').'" alt="'.__('On your watch list.').'" /> ';
     }
     $out = '';
-    if('' != $issue->due_dtime and (time() >= strtotime($issue->due_dtime))) {
+    if('' != $issue->due_dtime and (time() >= strtotime($issue->due_dtime))
+	    and in_array($issue->status, $issue->get_project()->getTagIdsByStatus('open'))) {
         $out = ' <span class="overdue">overdue</span>';
     }
     if (count($tags)) {
