@@ -22,87 +22,76 @@
 # ***** END LICENSE BLOCK ***** */
 
 /**
- * Update a documentation page.
+ * Create a new documentation page.
  *
- * This add a corresponding revision.
+ * This create a new page and the corresponding revision.
  *
  */
-class IDF_Form_WikiUpdate extends Pluf_Form
+class IDF_Form_WikiPageCreate extends Pluf_Form
 {
     public $user = null;
     public $project = null;
-    public $page = null;
     public $show_full = false;
-    
 
     public function initFields($extra=array())
     {
-        $this->page = $extra['page'];
+        $initial = __('# Introduction
+
+Add your content here.
+
+
+# Details
+
+Add your content here. Format your content with:
+
+* Text in **bold** or *italic*.
+* Headings, paragraphs, and lists.
+* Links to other [[WikiPage]].
+');
         $this->user = $extra['user'];
         $this->project = $extra['project'];
         if ($this->user->hasPerm('IDF.project-owner', $this->project)
             or $this->user->hasPerm('IDF.project-member', $this->project)) {
             $this->show_full = true;
         }
-        if ($this->show_full) {
-            $this->fields['title'] = new Pluf_Form_Field_Varchar(
+        $initname = (!empty($extra['name'])) ? $extra['name'] : __('PageName');
+        $this->fields['title'] = new Pluf_Form_Field_Varchar(
                                       array('required' => true,
                                             'label' => __('Page title'),
-                                            'initial' => $this->page->title,
+                                            'initial' => $initname,
                                             'widget_attrs' => array(
                                                        'maxlength' => 200,
                                                        'size' => 67,
                                                                     ),
                                             'help_text' => __('The page name must contains only letters, digits and the dash (-) character.'),
                                             ));
-            $this->fields['summary'] = new Pluf_Form_Field_Varchar(
+        $this->fields['summary'] = new Pluf_Form_Field_Varchar(
                                       array('required' => true,
                                             'label' => __('Description'),
                                             'help_text' => __('This one line description is displayed in the list of pages.'),
-                                            'initial' => $this->page->summary,
-                                            'widget_attrs' => array(
-                                                       'maxlength' => 200,
-                                                       'size' => 67,
-                                                                    ),
-                                            ));
-        }
-        $rev = $this->page->get_current_revision();
-        $this->fields['content'] = new Pluf_Form_Field_Varchar(
-                                      array('required' => true,
-                                            'label' => __('Content'),
-                                            'initial' => $rev->content,
-                                            'widget' => 'Pluf_Form_Widget_TextareaInput',
-                                            'widget_attrs' => array(
-                                                       'cols' => 68,
-                                                       'rows' => 26,
-                                                                    ),
-                                            ));
-        $this->fields['comment'] = new Pluf_Form_Field_Varchar(
-                                      array('required' => true,
-                                            'label' => __('Comment'),
-                                            'help_text' => __('One line to describe the changes you made.'),
                                             'initial' => '',
                                             'widget_attrs' => array(
                                                        'maxlength' => 200,
                                                        'size' => 67,
                                                                     ),
                                             ));
+        $this->fields['content'] = new Pluf_Form_Field_Varchar(
+                                      array('required' => true,
+                                            'label' => __('Content'),
+                                            'initial' => $initial,
+                                            'widget' => 'Pluf_Form_Widget_TextareaInput',
+                                            'widget_attrs' => array(
+                                                       'cols' => 68,
+                                                       'rows' => 26,
+                                                                    ),
+                                            ));
 
         if ($this->show_full) {
-            $tags = $this->page->get_tags_list();
             for ($i=1;$i<4;$i++) {
-                $initial = '';
-                if (isset($tags[$i-1])) {
-                    if ($tags[$i-1]->class != 'Other') {
-                        $initial = (string) $tags[$i-1];
-                    } else {
-                        $initial = $tags[$i-1]->name;
-                    }
-                }
                 $this->fields['label'.$i] = new Pluf_Form_Field_Varchar(
                                             array('required' => false,
                                                   'label' => __('Labels'),
-                                                  'initial' => $initial,
+                                                  'initial' => '',
                                                   'widget_attrs' => array(
                                                        'maxlength' => 50,
                                                        'size' => 20,
@@ -118,10 +107,10 @@ class IDF_Form_WikiUpdate extends Pluf_Form
         if (preg_match('/[^a-zA-Z0-9\-]/', $title)) {
             throw new Pluf_Form_Invalid(__('The title contains invalid characters.'));
         }
-        $sql = new Pluf_SQL('project=%s AND title=%s', 
+        $sql = new Pluf_SQL('project=%s AND title=%s',
                             array($this->project->id, $title));
-        $pages = Pluf::factory('IDF_WikiPage')->getList(array('filter'=>$sql->gen()));
-        if ($pages->count() > 0 and $pages[0]->id != $this->page->id) {
+        $pages = Pluf::factory('IDF_Wiki_Page')->getList(array('filter'=>$sql->gen()));
+        if ($pages->count() > 0) {
             throw new Pluf_Form_Invalid(__('A page with this title already exists.'));
         }
         return $title;
@@ -148,7 +137,7 @@ class IDF_Form_WikiUpdate extends Pluf_Form
             $this->cleaned_data['label'.$i] = trim($this->cleaned_data['label'.$i]);
             if (strpos($this->cleaned_data['label'.$i], ':') !== false) {
                 list($class, $name) = explode(':', $this->cleaned_data['label'.$i], 2);
-                list($class, $name) = array(mb_strtolower(trim($class)), 
+                list($class, $name) = array(mb_strtolower(trim($class)),
                                             trim($name));
             } else {
                 $class = 'other';
@@ -177,9 +166,9 @@ class IDF_Form_WikiUpdate extends Pluf_Form
         if (!$this->isValid()) {
             throw new Exception(__('Cannot save the model from an invalid form.'));
         }
+        // Add a tag for each label
+        $tags = array();
         if ($this->show_full) {
-            $tagids = array();
-            $tags = array();
             for ($i=1;$i<4;$i++) {
                 if (strlen($this->cleaned_data['label'.$i]) > 0) {
                     if (strpos($this->cleaned_data['label'.$i], ':') !== false) {
@@ -189,54 +178,28 @@ class IDF_Form_WikiUpdate extends Pluf_Form
                         $class = 'Other';
                         $name = trim($this->cleaned_data['label'.$i]);
                     }
-                    $tag = IDF_Tag::add($name, $this->project, $class);
-                    $tags[] = $tag;
-                    $tagids[] = $tag->id;
+                    $tags[] = IDF_Tag::add($name, $this->project, $class);
                 }
             }
-            // Compare between the old and the new data
-            $changes = array();
-            $oldtags = $this->page->get_tags_list();
-            foreach ($tags as $tag) {
-                if (!Pluf_Model_InArray($tag, $oldtags)) {
-                    if (!isset($changes['lb'])) $changes['lb'] = array();
-                    if ($tag->class != 'Other') {
-                        $changes['lb'][] = (string) $tag; //new tag
-                    } else {
-                        $changes['lb'][] = (string) $tag->name;
-                    }
-                }
-            }
-            foreach ($oldtags as $tag) {
-                if (!Pluf_Model_InArray($tag, $tags)) {
-                    if (!isset($changes['lb'])) $changes['lb'] = array();
-                    if ($tag->class != 'Other') {
-                        $changes['lb'][] = '-'.(string) $tag; //new tag
-                    } else {
-                        $changes['lb'][] = '-'.(string) $tag->name;
-                    }
-                }
-            }
-            if (trim($this->page->summary) != trim($this->cleaned_data['summary'])) {
-                $changes['su'] = trim($this->cleaned_data['summary']);
-            }
-            // Update the page
-            $this->page->batchAssoc('IDF_Tag', $tagids);
-            $this->page->summary = trim($this->cleaned_data['summary']);
-            $this->page->title = trim($this->cleaned_data['title']);
-        } else {
-            $changes = array();
         }
-        $this->page->update();
-        // add the new revision
-        $rev = new IDF_WikiRevision();
-        $rev->wikipage = $this->page;
+        // Create the page
+        $page = new IDF_Wiki_Page();
+        $page->project = $this->project;
+        $page->submitter = $this->user;
+        $page->summary = trim($this->cleaned_data['summary']);
+        $page->title = trim($this->cleaned_data['title']);
+        $page->create();
+        foreach ($tags as $tag) {
+            $page->setAssoc($tag);
+        }
+        // add the first revision
+        $rev = new IDF_Wiki_PageRevision();
+        $rev->wikipage = $page;
         $rev->content = $this->cleaned_data['content'];
         $rev->submitter = $this->user;
-        $rev->summary = $this->cleaned_data['comment'];
-        $rev->changes = $changes;
+        $rev->summary = __('Initial page creation');
         $rev->create();
-        $rev->notify($this->project->getConf(), false);
-        return $this->page;
+        $rev->notify($this->project->getConf());
+        return $page;
     }
 }
