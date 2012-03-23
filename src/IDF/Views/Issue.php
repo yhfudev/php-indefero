@@ -122,6 +122,12 @@ class IDF_Views_Issue
                 }
                 arsort($ownerStatistics);
 
+                // Issue due date statistics
+                $overdue = $prj->getIssueCountByOverdue('open');
+				$combined_opened = $overdue['overdue'] + $overdue['in_date'];
+				$duedateStatistics['Overdue'] = array($overdue['overdue'], (int)(100 * $overdue['overdue'] / $combined_opened), 'Overdue');
+				$duedateStatistics['In date'] = array($overdue['in_date'], (int)(100 * $overdue['in_date'] / $combined_opened), 'In date');
+
                 // Issue class tag statistics
                 $grouped_tags = $prj->getTagCloud();
                 foreach ($grouped_tags as $class => $tags) {
@@ -155,6 +161,7 @@ class IDF_Views_Issue
                                                      'project' => $prj,
                                                      'tagStatistics' => $tagStatistics,
                                                      'ownerStatistics' => $ownerStatistics,
+						   							 'duedateStatistics' => $duedateStatistics,
                                                      'status' => $status,
                                                      ),
                                                $request);
@@ -748,6 +755,56 @@ class IDF_Views_Issue
                                             array($prj->shortname));
             return new Pluf_HTTP_Response_Redirect($url);            
         }
+        
+        $title = sprintf(__('%s Closed Issues'), (string) $prj);
+        // Get stats about the issues
+        $open = $prj->getIssueCountByStatus('open');
+        $closed = $prj->getIssueCountByStatus('closed');
+        // Paginator to paginate the issues
+        $pag = new Pluf_Paginator(new IDF_Issue());
+        $pag->class = 'recent-issues';
+        $pag->item_extra_props = array('project_m' => $prj,
+                                       'shortname' => $prj->shortname,
+                                       'current_user' => $request->user);
+        $pag->summary = __('This table shows the closed issues.');
+        $otags = $prj->getTagIdsByStatus('closed');
+        if (count($otags) == 0) $otags[] = 0;
+        $pag->forced_where = new Pluf_SQL('project=%s AND status IN ('.implode(', ', $otags).')', array($prj->id));
+        $pag->action = array('IDF_Views_Issue::listStatus', array($prj->shortname, $status));
+        $pag->sort_order = array('modif_dtime', 'ASC'); // will be reverted
+        $pag->sort_reverse_order = array('modif_dtime');
+        $pag->sort_link_title = true;
+        $pag->extra_classes = array('a-c', '', 'a-c', '');
+        $list_display = array(
+             'id' => __('Id'),
+             array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
+             array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
+             array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
+                              );
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
+        $pag->items_per_page = 10;
+        $pag->no_results_text = __('No issues were found.');
+        $pag->setFromRequest($request);
+        return Pluf_Shortcuts_RenderToResponse('idf/issues/index.html',
+                                               array('project' => $prj,
+                                                     'page_title' => $title,
+                                                     'open' => $open,
+                                                     'closed' => $closed,
+                                                     'issues' => $pag,
+                                                     'cloud' => 'closed_issues',
+                                                     ),
+                                               $request);
+    }
+
+    /**
+     * View list of issues for a given project with a given status.
+     */
+    public $listOverdue_precond = array('IDF_Precondition::accessIssues');
+    public function listOverdue($request, $match)
+    {
+        $prj = $request->project;
+        $status = $match[2];
         
         $title = sprintf(__('%s Closed Issues'), (string) $prj);
         // Get stats about the issues

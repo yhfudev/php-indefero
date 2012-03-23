@@ -201,6 +201,28 @@ GROUP BY uid";
 
         return $ownerStatistics;
     }
+    
+    /**
+     * Returns the number of overdue/in date issues.
+     *
+     * @param string Status ('open'), 'closed'
+     * @return int Count
+     */
+    public function getIssueCountByOverdue()
+    {
+        $tags = implode(',', $this->getTagIdsByStatus('open'));
+        $sqlIssueTable = Pluf::factory('IDF_Issue')->getSqlTable();
+        $query = "SELECT (
+                    SELECT COUNT(*) FROM $sqlIssueTable
+                    WHERE due_dtime < NOW() AND status IN ($tags)
+        		  ) AS overdue,
+        		  ( SELECT COUNT(*) FROM $sqlIssueTable
+        			WHERE due_dtime >= NOW() AND status IN ($tags)
+        		  ) AS in_date";
+        $db = Pluf::db();
+        $dbData = $db->select($query);
+        return current($dbData);
+    }
 
     /**
      * Returns the number of open/closed issues.
