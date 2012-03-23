@@ -218,7 +218,7 @@ GROUP BY uid";
         		  ) AS overdue,
         		  ( SELECT COUNT(*) FROM $sqlIssueTable
         			WHERE due_dtime >= NOW() AND status IN ($tags)
-        		  ) AS in_date";
+        		  ) AS undue";
         $db = Pluf::db();
         $dbData = $db->select($query);
         return current($dbData);

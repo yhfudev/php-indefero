@@ -124,9 +124,12 @@ class IDF_Views_Issue
 
                 // Issue due date statistics
                 $overdue = $prj->getIssueCountByOverdue('open');
-				$combined_opened = $overdue['overdue'] + $overdue['in_date'];
-				$duedateStatistics['Overdue'] = array($overdue['overdue'], (int)(100 * $overdue['overdue'] / $combined_opened), 'Overdue');
-				$duedateStatistics['In date'] = array($overdue['in_date'], (int)(100 * $overdue['in_date'] / $combined_opened), 'In date');
+                $combined_opened = $overdue['overdue'] + $overdue['undue'];
+                $duedateStatistics = array();
+                if($combined_opened > 0) {
+                    $duedateStatistics['Overdue'] = array($overdue['overdue'], (int)(100 * $overdue['overdue'] / $combined_opened), 'Overdue');
+                    $duedateStatistics['Undue'] = array($overdue['undue'], (int)(100 * $overdue['undue'] / $combined_opened), 'Undue');
+                }
 
                 // Issue class tag statistics
                 $grouped_tags = $prj->getTagCloud();
@@ -806,7 +809,7 @@ class IDF_Views_Issue
         $prj = $request->project;
         $status = $match[2];
         
-        $title = sprintf(__('%s Closed Issues'), (string) $prj);
+        $title = sprintf(__('%s %s Issues'), (string) $prj, (string) $status);
         // Get stats about the issues
         $open = $prj->getIssueCountByStatus('open');
         $closed = $prj->getIssueCountByStatus('closed');
@@ -816,13 +819,18 @@ class IDF_Views_Issue
         $pag->item_extra_props = array('project_m' => $prj,
                                        'shortname' => $prj->shortname,
                                        'current_user' => $request->user);
-        $pag->summary = __('This table shows the closed issues.');
-        $otags = $prj->getTagIdsByStatus('closed');
+        $pag->summary = __('This table shows the overdue issues.');
+        $otags = $prj->getTagIdsByStatus('open');
         if (count($otags) == 0) $otags[] = 0;
-        $pag->forced_where = new Pluf_SQL('project=%s AND status IN ('.implode(', ', $otags).')', array($prj->id));
-        $pag->action = array('IDF_Views_Issue::listStatus', array($prj->shortname, $status));
-        $pag->sort_order = array('modif_dtime', 'ASC'); // will be reverted
-        $pag->sort_reverse_order = array('modif_dtime');
+        if ('Undue' == $status) {
+            $where = 'AND due_dtime >= NOW()';
+        } else {
+            $where = 'AND due_dtime < NOW()';
+        }
+        $pag->forced_where = new Pluf_SQL('project=%s ' . $where . ' AND status IN ('.implode(', ', $otags).')', array($prj->id));
+        $pag->action = array('IDF_Views_Issue::listOverdue', array($prj->shortname, $status));
+        $pag->sort_order = array('due_dtime', 'DESC'); // will be reverted
+        $pag->sort_reverse_order = array('due_dtime');
         $pag->sort_link_title = true;
         $pag->extra_classes = array('a-c', '', 'a-c', '');
         $list_display = array(
