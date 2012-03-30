@@ -201,27 +201,49 @@ GROUP BY uid";
 
         return $ownerStatistics;
     }
-    
+
     /**
-     * Returns the number of overdue/in date issues.
+     * Returns the number of overdue issues.
      *
-     * @param string Status ('open'), 'closed'
      * @return int Count
      */
-    public function getIssueCountByOverdue()
+    public function getIssueCountByDueDate($due='overdue', $status='open', $label=null, $ids=array())
     {
-        $tags = implode(',', $this->getTagIdsByStatus('open'));
-        $sqlIssueTable = Pluf::factory('IDF_Issue')->getSqlTable();
-        $query = "SELECT (
-                    SELECT COUNT(*) FROM $sqlIssueTable
-                    WHERE due_dtime < NOW() AND status IN ($tags)
-        		  ) AS overdue,
-        		  ( SELECT COUNT(*) FROM $sqlIssueTable
-        			WHERE due_dtime >= NOW() AND status IN ($tags)
-        		  ) AS undue";
-        $db = Pluf::db();
-        $dbData = $db->select($query);
-        return current($dbData);
+        switch ($status) {
+        case 'open':
+            $key = 'labels_issue_open';
+            $default = IDF_Form_IssueTrackingConf::init_open;
+            break;
+        case 'closed':
+        default:
+            $key = 'labels_issue_closed';
+            $default = IDF_Form_IssueTrackingConf::init_closed;
+            break;
+        }
+        $tags = array();
+        foreach ($this->getTagsFromConfig($key, $default, 'Status') as $tag) {
+            $tags[] = (int)$tag->id;
+        }
+        if (count($tags) == 0) return array();
+        $sql = new Pluf_SQL(sprintf('project=%%s AND status IN (%s)', implode(', ', $tags)), array($this->id));
+        if (!is_null($label)) {
+            $sql2 = new Pluf_SQL('idf_tag_id=%s', array($label->id));
+            $sql->SAnd($sql2);
+        }
+        if (count($ids) > 0) {
+            $sql2 = new Pluf_SQL(sprintf('id IN (%s)', implode(', ', $ids)));
+            $sql->SAnd($sql2);
+        }
+        if('overdue' === $due) {
+            $sql3 = new Pluf_SQL('due_dtime < NOW()');
+        } else {
+            $sql3 = new Pluf_SQL('due_dtime >= NOW()');
+        }
+        $sql->SAnd($sql3);
+        $params = array('filter' => $sql->gen());
+        if (!is_null($label)) { $params['view'] = 'join_tags'; }
+        $gissue = new IDF_Issue();
+        return $gissue->getCount($params);
     }
 
     /**

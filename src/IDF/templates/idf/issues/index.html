@@ -11,7 +11,11 @@
 {aurl 'open_url', 'IDF_Views_Issue::index', array($project.shortname)}
 {aurl 'closed_url', 'IDF_Views_Issue::listStatus', array($project.shortname, 'closed')}
 {blocktrans}<p><strong>Open issues:</strong> <a href="{$open_url}">{$open}</a></p>
-<p><strong>Closed issues:</strong> <a href="{$closed_url}">{$closed}</a></p>{/blocktrans}
+<p><strong>Closed issues:</strong> <a href="{$closed_url}">{$closed}</a></p>
+<p>
+    {aurl 'overdue_url', 'IDF_Views_Issue::listOverdue', array($project.shortname, 'Overdue', 'overdue')}
+    <span>Overdue:</span> <a href="{$overdue_url}">{$overdue}</a>
+</p>{/blocktrans}
 {assign $cloud_url = 'IDF_Views_Issue::listLabel'}
 {include 'idf/tags-cloud.html'}
 {/block}
