@@ -475,7 +475,8 @@ class IDF_Views_Issue
                                     'page_title' => $title,
                                     'preview' => $preview,
                                     'issue' => new IDF_Issue(),
-                                    'date_today' => date('Y-m-d 23:59')
+                                    'date_today' => date('Y-m-d'),
+                                    'default_time' => Pluf::f('issue_default_due_date_time'),
                                     ),
                               self::autoCompleteArrays($prj)
                               );
@@ -713,7 +714,8 @@ class IDF_Views_Issue
                                                      'previous_issue_id' => $previous_issue_id,
                                                      'next_issue_id' => $next_issue_id,
                                                      'related_issues' => $related_issues,
-                                                     'date_today' => date('Y-m-d 23:59'),
+                                                     'date_today' => date('Y-m-d'),
+                                                     'default_time' => Pluf::f('issue_default_due_date_time'),
                                                      ),
                                                $arrays),
                                                $request);

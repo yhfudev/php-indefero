@@ -544,5 +544,9 @@ $cfg['activity_section_weights'] = array(
 # high enough to show a proper activity index for those projects as well.
 $cfg['activity_lookback'] = 7;
 
+# Configure the default time that should be used when setting an issue due date
+# via the quick (COB, EOW, etc) menu or via the date picker
+$cfg['issue_default_due_date_time'] = '17:30';
+
 return $cfg;
 

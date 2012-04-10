@@ -131,7 +131,7 @@
 <th>{$form.f.due_dtime.labelTag}:</th>
 <td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
 {$form.f.due_dtime|unsafe}
-<a href="#" rel="{$date_today}" id="due_dtime_today">Today</a>
+<a href="#" rel="{$date_today} {$default_time}" id="due_dtime_today">Today</a>
 </td>
 <tr>
 <tr>
@@ -213,6 +213,7 @@
 {/block}
 {block javascript}{if $form}{include 'idf/issues/js-autocomplete.html'}
 <script type="text/javascript">
+var default_time = '{$default_time}';
 {literal}
 $(document).ready(function(){
     $("#id_due_dtime").datepicker({
@@ -222,7 +223,7 @@ $(document).ready(function(){
         constrainInput: false,
         dateFormat: 'yy-mm-dd',
         onSelect: function(dateText, inst) {
-            this.value = dateText + ' 23:59';
+            this.value = dateText + ' ' + default_time;
         }
     });
     $("#due_dtime_today").click(function(){
