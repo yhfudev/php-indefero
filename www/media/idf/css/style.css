@@ -325,6 +325,34 @@ div.issue-submit-info h2 {
   margin-top: 0;
 }
 
+#due_dtime_wrapper {
+    position: relative;
+    float: right;
+    width: 350px;
+}
+
+#due_dtime_more_shortcuts {
+    display: none;
+    width: 345px;
+    position: absolute;
+    top: -3px;
+    left: -6px;
+    background: white;
+    padding: 2px 5px;
+    border: 1px solid black;
+}
+
+#due_dtime_wrapper a {
+    text-decoration: none;
+    color: black;
+    padding: 0 2px;
+}
+
+#due_dtime_wrapper a:hover {
+    background-color: #4E9A06;
+    color: white;
+}
+
 span.label {
   color: #204a87;
   padding-left: 0.5em;

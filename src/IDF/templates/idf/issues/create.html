@@ -66,7 +66,20 @@
 <th>{$form.f.due_dtime.labelTag}:</th>
 <td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
 {$form.f.due_dtime|unsafe}
-<a href="#" rel="{$date_today} {$default_time}" id="due_dtime_today">Today</a>
+<div id="due_dtime_wrapper">
+<a href="#" rel="{$date_today} {$default_time}" class="due_dtime_shortcut" id="due_dtime_today">Today</a>
+<div id="due_dtime_more_shortcuts" style="display: none">
+<a href="#" rel="{$date_today} {$default_time}" class="due_dtime_shortcut" id="due_dtime_today_more">Today</a> -
+<a href="#" rel="{$date_tomorrow} {$default_time}" class="due_dtime_shortcut" id="due_dtime_tomorrow">Tomorrow</a> -
+<a href="#" rel="{$date_eow} {$default_time}" class="due_dtime_shortcut" id="due_dtime_eow">End of the Week</a> -
+<a href="#" rel="{$date_eom} {$default_time}" class="due_dtime_shortcut" id="due_dtime_eom">End of the Month</a><br />
+<a href="#" rel="{$date_2_hours}" class="due_dtime_shortcut" id="due_dtime_2_hours">2 Hours</a> -
+<a href="#" rel="{$date_2_days} {$default_time}" class="due_dtime_shortcut" id="due_dtime_2_days">2 Days</a> -
+<a href="#" rel="{$date_1_week} {$default_time}" class="due_dtime_shortcut" id="due_dtime_1_week">1 Week</a> -
+<a href="#" rel="{$date_two_weeks} {$default_time}" class="due_dtime_shortcut" id="due_dtime_two_weeks">A Fortnight</a> -
+<a href="#" rel="{$date_one_month} {$default_time}" class="due_dtime_shortcut" id="due_dtime_one_month">1 Month</a>
+</div>
+</div>
 </td>
 <tr>
 <th>{$form.f.relation_type0.labelTag}:</th>
@@ -125,7 +138,12 @@ $(document).ready(function(){
             this.value = dateText + ' ' + default_time;
         }
     });
-    $("#due_dtime_today").click(function(){
+    $('#due_dtime_wrapper').mouseover(function(){
+        $('#due_dtime_more_shortcuts').show();
+    }).mouseout(function(){
+        $('#due_dtime_more_shortcuts').hide();
+    });
+    $(".due_dtime_shortcut").click(function(){
         $('#id_due_dtime').val($(this).attr('rel'));
         return false;
     });
