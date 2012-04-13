@@ -132,7 +132,6 @@ class IDF_Views_Issue
                 $duedateStatistics = array();
                 if($combined_opened > 0) {
                     $duedateStatistics['Overdue'] = array($overdue, (int)(100 * $overdue / $combined_opened), 'Overdue');
-                    $duedateStatistics['Undue'] = array($undue, (int)(100 * $undue / $combined_opened), 'Undue');
                 }
 
                 // Issue class tag statistics
