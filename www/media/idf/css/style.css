@@ -346,8 +346,6 @@ div.issue-submit-info h2 {
 
 #due_dtime_more_shortcuts {
   display: none;
-  width: 345px;
-
   background: #A5E26A;
   border-top: 0;
   position: absolute;
@@ -360,10 +358,9 @@ div.issue-submit-info h2 {
   -webkit-box-shadow: 0 10px 20px #333;
   box-shadow: 0 10px 20px #333;
   max-height: 400px;
-  min-width: 100%;
+  min-width: 145px;
   overflow-x: hidden;
   overflow-y: auto;
-
   padding: 0 5px 5px;
 }
 
