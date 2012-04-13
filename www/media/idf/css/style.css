@@ -326,31 +326,72 @@ div.issue-submit-info h2 {
 }
 
 #due_dtime_wrapper {
-    position: relative;
-    float: right;
-    width: 350px;
+  float: right;
+  width: 350px;
+  position: relative;
+  padding-left: 0 !important;
+}
+
+#due_dtime_shortcut_link {
+  text-decoration: none;
+  color: #000;
+}
+
+#due_dtime_wrapper > a {
+  padding-left: 5px;
+  padding-right: 5px;
+  margin-top: -3px;
+  padding-top: 3px;
 }
 
 #due_dtime_more_shortcuts {
-    display: none;
-    width: 345px;
-    position: absolute;
-    top: -3px;
-    left: -6px;
-    background: white;
-    padding: 2px 5px;
-    border: 1px solid black;
+  display: none;
+  width: 345px;
+
+  background: #A5E26A;
+  border-top: 0;
+  position: absolute;
+  margin: 1px 0 0;
+  z-index: 1000;
+  top: 1.1em;
+  -moz-border-radius: 0 0 3px 3px;
+  border-radius: 0 0 3px 3px;
+  -moz-box-shadow: 0 10px 20px #333;
+  -webkit-box-shadow: 0 10px 20px #333;
+  box-shadow: 0 10px 20px #333;
+  max-height: 400px;
+  min-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  padding: 0 5px 5px;
 }
 
-#due_dtime_wrapper a {
-    text-decoration: none;
-    color: black;
-    padding: 0 2px;
+#due_dtime_more_shortcuts dt {
+  font-weight: bold;
+  margin-top: 2px;
 }
 
-#due_dtime_wrapper a:hover {
-    background-color: #4E9A06;
-    color: white;
+#due_dtime_more_shortcuts dd {
+    margin-left: 6px;
+}
+
+#due_dtime_more_shortcuts a {
+  text-decoration: none;
+  padding: 0 2px;
+}
+
+#due_dtime_more_shortcuts a:hover {
+  background: #fff;
+}
+
+#due_dtime_wrapper:hover > a {
+  background: #A5E26A;
+  text-decoration: none;
+}
+
+#due_dtime_wrapper:hover a {
+  color: #2E3436;
 }
 
 span.label {
@@ -646,7 +687,7 @@ span.ctrl-char {
   cursor: default;
 }
 
-/* special formatting for the TAB character: make it wider, so it is rendered more properly */ 
+/* special formatting for the TAB character: make it wider, so it is rendered more properly */
 span.ctrl-char[title="0x09"] {
   width: 24px;
 }
@@ -737,7 +778,7 @@ table.diff-linecounts.right-hidden tr > td + td {
 table.diff-contents td {
   line-height: 12px;
   padding: 2px;
-  font-size: 90%; 
+  font-size: 90%;
   border: none;
   white-space: pre;
 }
@@ -759,7 +800,7 @@ table.diff-contents td:hover > span.ctrl-char {
 }
 
 table.diff-contents td.added > span.ctrl-char {
-  background: #0A0;   
+  background: #0A0;
 }
 
 table.diff-contents td.removed > span.ctrl-char {
@@ -893,7 +934,7 @@ div.deprecated-page {
 }
 
 li.old-rev {
-  font-style: italic;    
+  font-style: italic;
 }
 
 .delp {

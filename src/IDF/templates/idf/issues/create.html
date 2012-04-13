@@ -67,18 +67,22 @@
 <td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
 {$form.f.due_dtime|unsafe}
 <div id="due_dtime_wrapper">
-<a href="#" rel="{$date_today} {$default_time}" class="due_dtime_shortcut" id="due_dtime_today">Today</a>
-<div id="due_dtime_more_shortcuts" style="display: none">
-<a href="#" rel="{$date_today} {$default_time}" class="due_dtime_shortcut" id="due_dtime_today_more">Today</a> -
-<a href="#" rel="{$date_tomorrow} {$default_time}" class="due_dtime_shortcut" id="due_dtime_tomorrow">Tomorrow</a> -
-<a href="#" rel="{$date_eow} {$default_time}" class="due_dtime_shortcut" id="due_dtime_eow">End of the Week</a> -
-<a href="#" rel="{$date_eom} {$default_time}" class="due_dtime_shortcut" id="due_dtime_eom">End of the Month</a><br />
-<a href="#" rel="{$date_2_hours}" class="due_dtime_shortcut" id="due_dtime_2_hours">2 Hours</a> -
-<a href="#" rel="{$date_2_days} {$default_time}" class="due_dtime_shortcut" id="due_dtime_2_days">2 Days</a> -
-<a href="#" rel="{$date_1_week} {$default_time}" class="due_dtime_shortcut" id="due_dtime_1_week">1 Week</a> -
-<a href="#" rel="{$date_two_weeks} {$default_time}" class="due_dtime_shortcut" id="due_dtime_two_weeks">A Fortnight</a> -
-<a href="#" rel="{$date_one_month} {$default_time}" class="due_dtime_shortcut" id="due_dtime_one_month">1 Month</a>
-</div>
+<a href="#" id="due_dtime_shortcut_link">Date shortcuts&hellip; ▾</a>
+    <dl id="due_dtime_more_shortcuts" style="display: none">
+        <dt>Soon</dt>
+        <dd><a href="#" rel="{$date_today}" class="due_dtime_shortcut" id="due_dtime_today_more">Today</a></dd>
+        <dd><a href="#" rel="{$date_tomorrow}" class="due_dtime_shortcut" id="due_dtime_tomorrow">Tomorrow</a></dd>
+        <dd><a href="#" rel="{$date_2_days}" class="due_dtime_shortcut" id="due_dtime_2_days">2 Days</a></dd>
+
+        <dt>Midterm</dt>
+        <dd><a href="#" rel="{$date_eow}" class="due_dtime_shortcut" id="due_dtime_eow">End of the Week</a></dd>
+        <dd><a href="#" rel="{$date_1_week}" class="due_dtime_shortcut" id="due_dtime_1_week">1 Week</a></dd>
+        <dd><a href="#" rel="{$date_two_weeks}" class="due_dtime_shortcut" id="due_dtime_two_weeks">A Fortnight</a></dd>
+
+        <dt>Longterm</dt>
+        <dd><a href="#" rel="{$date_eom}" class="due_dtime_shortcut" id="due_dtime_eom">End of the Month</a></dd>
+        <dd><a href="#" rel="{$date_one_month}" class="due_dtime_shortcut" id="due_dtime_one_month">1 Month</a></dd>
+    </dl>
 </div>
 </td>
 <tr>
