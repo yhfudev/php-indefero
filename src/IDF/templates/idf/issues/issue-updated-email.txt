@@ -6,7 +6,7 @@
 {trans 'Project:'} {$project.name|safe}
 {trans 'Status:'} {$issue.get_status.name}
 {trans 'Reported by:'} {$issue.get_submitter|safe}
-{if $issue.due_dtime}{trans 'Due date:'} {$issue.due_dtime|safe}{/if}
+{if $issue.due_dtime}{trans 'Due date:'} {$issue.due_dtime|date|safe}{/if}
 {trans 'URL:'} {$url_base}{url 'IDF_Views_Issue::view', array($project.shortname, $issue.id)}
 {assign $tags = $issue.get_tags_list()}{if $tags.count()}{trans 'Labels:'}
 {foreach $tags as $tag} {$tag.class|safe}:{$tag.name|safe}
