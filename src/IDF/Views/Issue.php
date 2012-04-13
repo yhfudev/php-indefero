@@ -91,6 +91,7 @@ class IDF_Views_Issue
     {
         $tagStatistics = array();
         $ownerStatistics = array();
+        $duedateStatistics = array();
         $status = array();
         $isTrackerEmpty = false;
 
