@@ -395,7 +395,7 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
                 $changes['ow'] = (is_null($owner)) ? '---' : $owner->login;
             }
             if (trim($this->issue->due_dtime) != trim($this->cleaned_data['due_dtime'])) {
-                $changes['du'] = trim($this->cleaned_data['due_dtime']);
+                $changes['du'] = Pluf_Template_dateFormat($this->cleaned_data['due_dtime']);
             }
             // Issue relations - additions
             foreach ($this->cleaned_data['_added_issue_relations'] as $verb => $ids) {

@@ -1156,7 +1156,9 @@ function IDF_Views_Issue_SummaryAndLabelsUnknownProject($field, $issue, $extra='
  */
 function IDF_Views_Issue_DueDate($field, $issue, $extra='')
 {
-    return $issue->$field;
+    if($issue->$field) {
+        return Pluf_Template_dateFormat($issue->$field);
+    }
 }
 
 /**
