@@ -199,6 +199,9 @@
 <strong>{trans 'Owner:'}</strong> {showuser $issue.get_owner(), $request}
 </p>{/if}
 {if $interested > 0}<p><strong>{trans 'Followed by:'}</strong> {blocktrans $interested}{$interested} person{plural}{$interested} persons{/blocktrans}</p>{/if}
+{if $issue.due_dtime}
+<p><strong>{trans 'Due Date:'}</strong> {$issue.due_dtime|date}</p>
+{/if}
 {assign $tags = $issue.get_tags_list()}{if $tags.count()}
 <p>
 <strong>{trans 'Labels:'}</strong><br />
