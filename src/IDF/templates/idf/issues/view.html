@@ -233,7 +233,6 @@
 {/block}
 {block javascript}{if $form}{include 'idf/issues/js-autocomplete.html'}
 <script type="text/javascript">
-var default_time = '{$default_time}';
 {literal}
 $(document).ready(function(){
     $("#id_due_dtime").datepicker({
@@ -241,10 +240,7 @@ $(document).ready(function(){
         changeMonth: true,
         yearRange: '-0:+5',
         constrainInput: false,
-        dateFormat: 'yy-mm-dd',
-        onSelect: function(dateText, inst) {
-            this.value = dateText + ' ' + default_time;
-        }
+        dateFormat: 'yy-mm-dd'
     });
     $('#due_dtime_wrapper').mouseover(function(){
         $('#due_dtime_more_shortcuts').show();

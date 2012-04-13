@@ -484,7 +484,6 @@ class IDF_Views_Issue
                                     'date_1_week' => date('Y-m-d', strtotime('+1 week')),
                                     'date_two_weeks' => date('Y-m-d', strtotime('+2 week')),
                                     'date_one_month' => date('Y-m-d', strtotime('+1 month')),
-                                    'default_time' => Pluf::f('issue_default_due_date_time'),
                                     ),
                               self::autoCompleteArrays($prj)
                               );
@@ -731,7 +730,6 @@ class IDF_Views_Issue
                                                      'date_1_week' => date('Y-m-d', strtotime('+1 week')),
                                                      'date_two_weeks' => date('Y-m-d', strtotime('+2 week')),
                                                      'date_one_month' => date('Y-m-d', strtotime('+1 month')),
-                                                     'default_time' => Pluf::f('issue_default_due_date_time'),
                                                      ),
                                                $arrays),
                                                $request);

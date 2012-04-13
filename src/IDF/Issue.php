@@ -156,10 +156,17 @@ class IDF_Issue extends Pluf_Model
         IDF_Search::remove($this);
     }
 
+    function restore() {
+        $this->due_dtime = substr($this->due_dtime, 0, 10);
+    }
+
     function preSave($create=false)
     {
         if ($this->id == '') {
             $this->creation_dtime = gmdate('Y-m-d H:i:s');
+        }
+        if($this->due_dtime) {
+            $this->due_dtime .= ' 23:59:59';
         }
         $this->modif_dtime = gmdate('Y-m-d H:i:s');
     }
