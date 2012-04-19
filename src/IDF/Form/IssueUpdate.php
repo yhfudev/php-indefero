@@ -103,10 +103,11 @@ class IDF_Form_IssueUpdate  extends IDF_Form_IssueCreate
                                                        'size' => 15,
                                                                     ),
                                             ));
+            $due_dtime = substr($this->issue->due_dtime, 0, 10);
             $this->fields['due_dtime'] = new IDF_Form_Field_Date(
                                 array('required' => false,
                                     'label' => __('Due date'),
-                                    'initial' => $this->issue->due_dtime,
+                                    'initial' => $due_dtime,
                                     'widget_attrs' => array('size' => 15,),
                                     ));
 
