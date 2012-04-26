@@ -474,16 +474,8 @@ class IDF_Views_Issue
                                     'page_title' => $title,
                                     'preview' => $preview,
                                     'issue' => new IDF_Issue(),
-                                    'date_today' => date('Y-m-d'),
-                                    'date_tomorrow' => date('Y-m-d', strtotime('tomorrow')),
-                                    'date_eow' => date('Y-m-d', strtotime('next friday')),
-                                    'date_eom' => date('Y-m-d', strtotime('last day of this month')),
-                                    'date_2_hours' => date('Y-m-d H:i', strtotime('+2 hours')),
-                                    'date_2_days' => date('Y-m-d', strtotime('+2 days')),
-                                    'date_1_week' => date('Y-m-d', strtotime('+1 week')),
-                                    'date_two_weeks' => date('Y-m-d', strtotime('+2 week')),
-                                    'date_one_month' => date('Y-m-d', strtotime('+1 month')),
                                     ),
+                              self::getDateShortcuts(),
                               self::autoCompleteArrays($prj)
                               );
         if ($api == true) return $params;
@@ -720,16 +712,8 @@ class IDF_Views_Issue
                                                      'previous_issue_id' => $previous_issue_id,
                                                      'next_issue_id' => $next_issue_id,
                                                      'related_issues' => $related_issues,
-                                                     'date_today' => date('Y-m-d'),
-                                                     'date_tomorrow' => date('Y-m-d', strtotime('tomorrow')),
-                                                     'date_eow' => date('Y-m-d', strtotime('next friday')),
-                                                     'date_eom' => date('Y-m-d', strtotime('last day of this month')),
-                                                     'date_2_hours' => date('Y-m-d H:i', strtotime('+2 hours')),
-                                                     'date_2_days' => date('Y-m-d', strtotime('+2 days')),
-                                                     'date_1_week' => date('Y-m-d', strtotime('+1 week')),
-                                                     'date_two_weeks' => date('Y-m-d', strtotime('+2 week')),
-                                                     'date_one_month' => date('Y-m-d', strtotime('+1 month')),
                                                      ),
+                                               self::getDateShortcuts(),
                                                $arrays),
                                                $request);
     }
@@ -1133,6 +1117,21 @@ class IDF_Views_Issue
         }
         $auto['auto_relation_types'] = substr($auto['auto_relation_types'], 0, -2);
         return $auto;
+    }
+
+    public static function getDateShortcuts()
+    {
+        return array(
+            'date_today' => date('Y-m-d'),
+            'date_tomorrow' => date('Y-m-d', strtotime('tomorrow')),
+            'date_eow' => date('Y-m-d', strtotime('next friday')),
+            'date_eom' => date('Y-m-d', strtotime('last day of this month')),
+            'date_2_hours' => date('Y-m-d H:i', strtotime('+2 hours')),
+            'date_2_days' => date('Y-m-d', strtotime('+2 days')),
+            'date_1_week' => date('Y-m-d', strtotime('+1 week')),
+            'date_two_weeks' => date('Y-m-d', strtotime('+2 week')),
+            'date_one_month' => date('Y-m-d', strtotime('+1 month')),
+        );
     }
 }
 
