@@ -109,28 +109,24 @@
     <h2>{blocktrans}Unresolved: By Due Date{/blocktrans}</h2>
     <table class='issue-summary'>
     <tbody>
-    {foreach $duedateStatistics as $key => $value}
         <tr>
         <td class="name">
-        {if !empty($value[2])}
-        {aurl 'url', 'IDF_Views_Issue::listOverdue', array($project.shortname, $value[2], 'due')}
-        <a href="{$url}">{$key}</a>
-        {else}{$key}{/if}
+        {aurl 'url', 'IDF_Views_Issue::listOverdue', array($project.shortname, 'Overdue', 'due')}
+        <a href="{$url}">{blocktrans}Overdue{/blocktrans}</a>
         </td>
-        <td class="count">{$value[0]}</td>
+        <td class="count">{$duedateStatistics[0]}</td>
         <td class="graph">
             <table class='graph'>
             <tbody><tr>
-            <td style="width:{$value[1] * 0.8 + 1}%" class="graph-color" valign="center">
+            <td style="width:{$duedateStatistics[1] * 0.8 + 1}%" class="graph-color" valign="center">
             <div class="colour-bar"></div>
             </td>
-            <td class="graph-percent">{$value[1]}%</td>
+            <td class="graph-percent">{$duedateStatistics[1]}%</td>
             </tr>
             </tbody>
             </table>
         </td>
         </tr>
-    {/foreach}
     </tbody>
     </table>
     </div>

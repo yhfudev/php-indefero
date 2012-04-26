@@ -127,11 +127,10 @@ class IDF_Views_Issue
 
                 // Issue due date statistics
                 $overdue = $prj->getIssueCountByDueDate('overdue');
-                $undue = $prj->getIssueCountByDueDate('undue');
-                $combined_opened = $overdue + $undue;
+                $combined_opened = $overdue + $opened;
                 $duedateStatistics = array();
                 if($combined_opened > 0) {
-                    $duedateStatistics['Overdue'] = array($overdue, (int)(100 * $overdue / $combined_opened), 'Overdue');
+                    $duedateStatistics = array($overdue, (int)(100 * $overdue / $combined_opened));
                 }
 
                 // Issue class tag statistics
