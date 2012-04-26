@@ -207,21 +207,10 @@ GROUP BY uid";
      *
      * @return int Count
      */
-    public function getIssueCountByDueDate($due='overdue', $status='open', $label=null, $ids=array())
+    public function getIssueCountByDueDate($due='overdue', $label=null, $ids=array())
     {
-        switch ($status) {
-        case 'open':
-            $key = 'labels_issue_open';
-            $default = IDF_Form_IssueTrackingConf::init_open;
-            break;
-        case 'closed':
-        default:
-            $key = 'labels_issue_closed';
-            $default = IDF_Form_IssueTrackingConf::init_closed;
-            break;
-        }
         $tags = array();
-        foreach ($this->getTagsFromConfig($key, $default, 'Status') as $tag) {
+        foreach ($this->getTagsFromConfig('labels_issue_open', IDF_Form_IssueTrackingConf::init_open, 'Status') as $tag) {
             $tags[] = (int)$tag->id;
         }
         if (count($tags) == 0) return array();

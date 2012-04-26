@@ -613,7 +613,7 @@ class IDF_Views_Issue
         }
 
         // get stats about the issues
-        $overdue = $prj->getIssueCountByDueDate('overdue', 'open', $tag, $issue_ids);
+        $overdue = $prj->getIssueCountByDueDate('overdue', $tag, $issue_ids);
         $open = $prj->getIssueCountByStatus('open', $tag, $issue_ids);
         $closed = $prj->getIssueCountByStatus('closed', $tag, $issue_ids);
 
@@ -931,7 +931,7 @@ class IDF_Views_Issue
         // Get stats about the open/closed issues having this tag.
         $open = $prj->getIssueCountByStatus('open', $tag);
         $closed = $prj->getIssueCountByStatus('closed', $tag);
-        $overdue = $prj->getIssueCountByDueDate('overdue', 'open', $tag);
+        $overdue = $prj->getIssueCountByDueDate('overdue', $tag);
         // Paginator to paginate the issues
         $pag = new Pluf_Paginator(new IDF_Issue());
         $pag->model_view = 'join_tags';
