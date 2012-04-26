@@ -29,7 +29,7 @@ function IDF_Migrations_25IssueDueDate_up($params=null)
 {
     $table = Pluf::factory('IDF_Issue')->getSqlTable();
     $sql = array();
-    $sql['PostgreSQL'] = 'ALTER TABLE '.$table.' ADD COLUMN "due_dtime" DATETIME';
+    $sql['PostgreSQL'] = 'ALTER TABLE '.$table.' ADD COLUMN "due_dtime" TIMESTAMP';
     $sql['MySQL'] = 'ALTER TABLE '.$table.' ADD COLUMN `due_dtime` DATETIME';
     $db = Pluf::db();
     $engine = Pluf::f('db_engine');
