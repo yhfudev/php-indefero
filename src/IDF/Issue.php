@@ -161,11 +161,9 @@ class IDF_Issue extends Pluf_Model
         if ($this->id == '') {
             $this->creation_dtime = gmdate('Y-m-d H:i:s');
         }
-        if($this->due_dtime and !empty($this->due_dtime)) {
-            $datetime = $this->due_dtime . ' 23:59:59';
-            if(date('Y-m-d', strtotime($datetime)) === $this->due_dtime) {
-                $this->due_dtime = $datetime;
-            }
+        if ($this->due_dtime and !empty($this->due_dtime)) {
+            $this->due_dtime = date('Y-m-d 23:59:59',
+                strtotime($this->due_dtime));
         }
         $this->modif_dtime = gmdate('Y-m-d H:i:s');
     }
