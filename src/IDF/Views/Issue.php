@@ -837,13 +837,13 @@ class IDF_Views_Issue
     public function listOverdue($request, $match)
     {
         $prj = $request->project;
-        $status = $match[2];
+        $status = __('Overdue');
 
         $title = sprintf(__('%s %s Issues'), (string) $prj, (string) $status);
         // Get stats about the issues
         $open = $prj->getIssueCountByStatus('open');
         $closed = $prj->getIssueCountByStatus('closed');
-        $overdue = $prj->getIssueCountByDueDate('overdue');
+        $overdue = $prj->getIssueCountByDueDate();
         // Paginator to paginate the issues
         $pag = new Pluf_Paginator(new IDF_Issue());
         $pag->class = 'recent-issues';
@@ -853,12 +853,7 @@ class IDF_Views_Issue
         $pag->summary = __('This table shows the overdue issues.');
         $otags = $prj->getTagIdsByStatus('open');
         if (count($otags) == 0) $otags[] = 0;
-        if ('Undue' == $status) {
-            $where = 'AND due_dtime >= NOW()';
-        } else {
-            $where = 'AND due_dtime < NOW()';
-        }
-        $pag->forced_where = new Pluf_SQL('project=%s ' . $where . ' AND status IN ('.implode(', ', $otags).')', array($prj->id));
+        $pag->forced_where = new Pluf_SQL('project=%s AND due_dtime < NOW() AND status IN ('.implode(', ', $otags).')', array($prj->id));
         $pag->action = array('IDF_Views_Issue::listOverdue', array($prj->shortname, $status));
         $pag->sort_order = array('due_dtime', 'DESC'); // will be reverted
         $pag->sort_reverse_order = array('due_dtime');

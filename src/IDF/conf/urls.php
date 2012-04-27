@@ -163,7 +163,7 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/status/(\w+)/$#',
                'model' => 'IDF_Views_Issue',
                'method' => 'listStatus');
 
-$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/due/(\w+)/$#',
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/due/overdue/$#',
                'base' => $base,
                'model' => 'IDF_Views_Issue',
                'method' => 'listOverdue');
