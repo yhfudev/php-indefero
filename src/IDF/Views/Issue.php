@@ -1180,7 +1180,7 @@ function IDF_Views_Issue_SummaryAndLabels($field, $issue, $extra='')
     $out = '';
     if('' != $issue->due_dtime and (time() >= strtotime($issue->due_dtime))
 	    and in_array($issue->status, $issue->get_project()->getTagIdsByStatus('open'))) {
-        $out = ' <span class="overdue">overdue</span>';
+        $out = ' <span class="overdue">' . __('overdue') . '</span>';
     }
     if (count($tags)) {
         $out .= '<br /><span class="note">'.implode(', ', $tags).'</span>';
