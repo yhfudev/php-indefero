@@ -1117,15 +1117,22 @@ class IDF_Views_Issue
     public static function getDateShortcuts()
     {
         return array(
-            'date_today' => date('Y-m-d'),
-            'date_tomorrow' => date('Y-m-d', strtotime('tomorrow')),
-            'date_eow' => date('Y-m-d', strtotime('next friday')),
-            'date_eom' => date('Y-m-d', strtotime('last day of this month')),
-            'date_2_hours' => date('Y-m-d H:i', strtotime('+2 hours')),
-            'date_2_days' => date('Y-m-d', strtotime('+2 days')),
-            'date_1_week' => date('Y-m-d', strtotime('+1 week')),
-            'date_two_weeks' => date('Y-m-d', strtotime('+2 week')),
-            'date_one_month' => date('Y-m-d', strtotime('+1 month')),
+            'date_shortcuts' => array(
+                __('Soon') => array(
+                    __('Today') => date('Y-m-d'),
+                    __('Tomorrow') => date('Y-m-d', strtotime('tomorrow')),
+                    __('2 Days') => date('Y-m-d', strtotime('+2 days')),
+                ),
+                __('Midterm') => array(
+                    __('Friday') => date('Y-m-d', strtotime('next friday')),
+                    __('1 Week') => date('Y-m-d', strtotime('+1 week')),
+                    __('A Fortnight') => date('Y-m-d', strtotime('+2 week')),
+                ),
+                __('Longterm') => array(
+                    __('End of the Month') => date('Y-m-d', strtotime('last day of this month')),
+                    __('1 Month') => date('Y-m-d', strtotime('+1 month')),
+                ),
+            ),
         );
     }
 }
