@@ -138,7 +138,7 @@
         {foreach $date_shortcuts as $time_span => $shortcuts}
             <dt>{$time_span}</dt>
             {foreach $shortcuts as $title => $date}
-                <dd><a href="#" rel="{$date}" class="due_dtime_shortcut">{$title}</a></dd>
+                <dd><a href="javascript:void(0);" rel="{$date}" class="due_dtime_shortcut">{$title}</a></dd>
             {/foreach}
         {/foreach}
     </dl>
@@ -244,7 +244,6 @@ $(document).ready(function(){
     });
     $(".due_dtime_shortcut").click(function(){
         $('#id_due_dtime').val($(this).attr('rel'));
-        return false;
     });
     // Hide the upload forms, we insert before the first attach file
     // row an "Attach File" little link.
