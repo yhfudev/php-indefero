@@ -48,7 +48,8 @@ class IDF_Tag extends Pluf_Model
                             array(
                                   'type' => 'Pluf_DB_Field_Foreignkey',
                                   'model' => 'IDF_Project',
-                                  'blank' => false,
+                                  'blank' => true,
+                                  'is_null' => true,
                                   'verbose' => __('project'),
                                   ),
                             'class' =>
@@ -76,13 +77,14 @@ class IDF_Tag extends Pluf_Model
                             );
 
         $table = $this->_con->pfx.'idf_project_idf_tag_assoc';
+        $cols = implode(', ', array_keys($this->_a['cols']));
         $this->_a['views'] = array(
             'join_projects' =>
                 array(
                 'join' => 'LEFT JOIN '.$table
                         .' ON idf_tag_id=id',
                 'select' => $this->getSelect().',COUNT(idf_project_id) as project_count',
-                'group' => 'idf_tag_id',
+                'group' => $cols,
                 'props' => array('project_count' => 'project_count'),
                 ),
         );
@@ -146,7 +148,7 @@ class IDF_Tag extends Pluf_Model
         $class = trim($class);
         $name = trim($name);
         $gtag = new IDF_Tag();
-        $sql = new Pluf_SQL('class=%s AND lcname=%s AND project=0',
+        $sql = new Pluf_SQL('class=%s AND lcname=%s AND project IS NULL',
                             array($class, mb_strtolower($name)));
         $tags = $gtag->getList(array('filter' => $sql->gen()));
         if ($tags->count() < 1) {
@@ -154,6 +156,7 @@ class IDF_Tag extends Pluf_Model
             $tag = new IDF_Tag();
             $tag->name = $name;
             $tag->class = $class;
+            $tag->project = null;
             $tag->create();
             return $tag;
         }

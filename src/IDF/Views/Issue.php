@@ -645,7 +645,7 @@ class IDF_Views_Issue
 
         $url = Pluf_HTTP_URL_urlForView('IDF_Views_Issue::view',
                                         array($prj->shortname, $issue->id));
-        $title = Pluf_Template::markSafe(sprintf(__('Issue <a href="%1$s">%2$d</a>: %3$s'), $url, $issue->id, $issue->summary));
+        $title = Pluf_Template::markSafe(sprintf(__('Issue <a href="%1$s">%2$d</a>: %3$s'), $url, $issue->id, Pluf_esc($issue->summary)));
         $form = false; // The form is available only if logged in.
         $starred = false;
         $closed = in_array($issue->status, $prj->getTagIdsByStatus('closed'));
