@@ -25,7 +25,7 @@
  * Add the private column for the project.
  */
 
-function IDF_Migrations_25IssueDueDate_up($params=null)
+function IDF_Migrations_26IssueDueDate_up($params=null)
 {
     $table = Pluf::factory('IDF_Issue')->getSqlTable();
     $sql = array();
@@ -39,7 +39,7 @@ function IDF_Migrations_25IssueDueDate_up($params=null)
     $db->execute($sql[$engine]);
 }
 
-function IDF_Migrations_25IssueDueDate_down($params=null)
+function IDF_Migrations_26IssueDueDate_down($params=null)
 {
     $table = Pluf::factory('IDF_Issue')->getSqlTable();
     $sql = array();
