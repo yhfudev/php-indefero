@@ -156,6 +156,15 @@ class IDF_Issue extends Pluf_Model
         IDF_Search::remove($this);
     }
 
+    function restore()
+    {
+        // Note: If a due date has not been set then it should
+        // be set to null and not a useless/confusing date so...
+        if ('0000-00-00 00:00:00' === $this->due_dtime) {
+            $this->due_dtime = null;
+        }
+    }
+
     function preSave($create=false)
     {
         if ($this->id == '') {
