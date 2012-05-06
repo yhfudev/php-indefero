@@ -202,6 +202,39 @@ GROUP BY uid";
     }
 
     /**
+     * Returns the number of overdue issues.
+     *
+     * @return int Count
+     */
+    public function getIssueCountByDueDate($due='overdue', $label=null, $ids=array())
+    {
+        $tags = array();
+        foreach ($this->getTagsFromConfig('labels_issue_open', IDF_Form_IssueTrackingConf::init_open, 'Status') as $tag) {
+            $tags[] = (int)$tag->id;
+        }
+        if (count($tags) == 0) return array();
+        $sql = new Pluf_SQL(sprintf('project=%%s AND status IN (%s)', implode(', ', $tags)), array($this->id));
+        if (!is_null($label)) {
+            $sql2 = new Pluf_SQL('idf_tag_id=%s', array($label->id));
+            $sql->SAnd($sql2);
+        }
+        if (count($ids) > 0) {
+            $sql2 = new Pluf_SQL(sprintf('id IN (%s)', implode(', ', $ids)));
+            $sql->SAnd($sql2);
+        }
+        if('overdue' === $due) {
+            $sql3 = new Pluf_SQL('due_dtime < NOW()');
+        } else {
+            $sql3 = new Pluf_SQL('due_dtime >= NOW()');
+        }
+        $sql->SAnd($sql3);
+        $params = array('filter' => $sql->gen());
+        if (!is_null($label)) { $params['view'] = 'join_tags'; }
+        $gissue = new IDF_Issue();
+        return $gissue->getCount($params);
+    }
+
+    /**
      * Returns the number of open/closed issues.
      *
      * @param string Status ('open'), 'closed'

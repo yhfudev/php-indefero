@@ -40,7 +40,7 @@
 {if $i> 0 and $c.changedIssue()}
 <div class="issue-changes">
 {foreach $c.changes as $w => $v}
-<strong>{if $w == 'su'}{trans 'Summary:'}{/if}{if $w == 'st'}{trans 'Status:'}{/if}{if $w == 'ow'}{trans 'Owner:'}{/if}{if $w == 'lb'}{trans 'Labels:'}{/if}{if $w == 'rel'}{trans 'Relations:'}{/if}</strong>
+<strong>{if $w == 'su'}{trans 'Summary:'}{/if}{if $w == 'st'}{trans 'Status:'}{/if}{if $w == 'ow'}{trans 'Owner:'}{/if}{if $w == 'du'}{trans 'Due date:'}{/if}{if $w == 'lb'}{trans 'Labels:'}{/if}{if $w == 'rel'}{trans 'Relations:'}{/if}</strong>
 {if $w == 'lb' or $w == 'rel'}
   {foreach $v as $t => $ls}
     {foreach $ls as $l}
@@ -128,6 +128,24 @@
 {$form.f.owner|unsafe}
 </td>
 </tr>
+<th>{$form.f.due_dtime.labelTag}:</th>
+<td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
+{$form.f.due_dtime|unsafe}
+<div id="due_dtime_wrapper">
+    <a href="#" id="due_dtime_shortcut_link">Date shortcuts&hellip; ▾</a>
+    {if $date_shortcuts}
+    <dl id="due_dtime_more_shortcuts" style="display: none">
+        {foreach $date_shortcuts as $time_span => $shortcuts}
+            <dt>{$time_span}</dt>
+            {foreach $shortcuts as $title => $date}
+                <dd><a href="javascript:void(0);" rel="{$date}" class="due_dtime_shortcut">{$title}</a></dd>
+            {/foreach}
+        {/foreach}
+    </dl>
+    {/if}
+</div>
+</td>
+<tr>
 <tr>
 <th>{$form.f.relation_type0.labelTag}:</th>
 <td>
@@ -180,6 +198,9 @@
 <strong>{trans 'Owner:'}</strong> {showuser $issue.get_owner(), $request}
 </p>{/if}
 {if $interested > 0}<p><strong>{trans 'Followed by:'}</strong> {blocktrans $interested}{$interested} person{plural}{$interested} persons{/blocktrans}</p>{/if}
+{if $issue.due_dtime}
+<p><strong>{trans 'Due Date:'}</strong> {$issue.due_dtime|date}</p>
+{/if}
 {assign $tags = $issue.get_tags_list()}{if $tags.count()}
 <p>
 <strong>{trans 'Labels:'}</strong><br />
@@ -209,7 +230,21 @@
 <script type="text/javascript">
 {literal}
 $(document).ready(function(){
-
+    $("#id_due_dtime").datepicker({
+        changeYear: true,
+        changeMonth: true,
+        yearRange: '-0:+5',
+        constrainInput: false,
+        dateFormat: 'yy-mm-dd'
+    });
+    $('#due_dtime_wrapper').mouseover(function(){
+        $('#due_dtime_more_shortcuts').show();
+    }).mouseout(function(){
+        $('#due_dtime_more_shortcuts').hide();
+    });
+    $(".due_dtime_shortcut").click(function(){
+        $('#id_due_dtime').val($(this).attr('rel'));
+    });
     // Hide the upload forms, we insert before the first attach file
     // row an "Attach File" little link.
     // We hide all the rows.

@@ -12,6 +12,8 @@
 {block context}
 {aurl 'open_url', 'IDF_Views_Issue::watchList', array($project.shortname, 'open')}
 {aurl 'closed_url', 'IDF_Views_Issue::watchList', array($project.shortname, 'closed')}
+{aurl 'overdue_url', 'IDF_Views_Issue::watchList', array($project.shortname, 'overdue')}
 {blocktrans}<p><strong>Open issues:</strong> <a href="{$open_url}">{$open}</a></p>
-<p><strong>Closed issues:</strong> <a href="{$closed_url}">{$closed}</a></p>{/blocktrans}
+<p><strong>Closed issues:</strong> <a href="{$closed_url}">{$closed}</a></p>
+<p><span>Overdue:</span> <a href="{$overdue_url}">{$overdue}</a></p>{/blocktrans}
 {/block}

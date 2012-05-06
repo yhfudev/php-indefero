@@ -42,6 +42,7 @@ class IDF_Views_Issue
         // Get stats about the issues
         $open = $prj->getIssueCountByStatus('open');
         $closed = $prj->getIssueCountByStatus('closed');
+        $overdue = $prj->getIssueCountByDueDate();
         // Paginator to paginate the issues
         $pag = new Pluf_Paginator(new IDF_Issue());
         $pag->class = 'recent-issues';
@@ -61,9 +62,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -71,6 +73,7 @@ class IDF_Views_Issue
                         'page_title' => $title,
                         'open' => $open,
                         'closed' => $closed,
+                        'overdue' => $overdue,
                         'issues' => $pag,
                         'cloud' => 'issues',
                 );
@@ -88,6 +91,7 @@ class IDF_Views_Issue
     {
         $tagStatistics = array();
         $ownerStatistics = array();
+        $duedateStatistics = array();
         $status = array();
         $isTrackerEmpty = false;
 
@@ -120,6 +124,14 @@ class IDF_Views_Issue
                     $ownerStatistics[$key] = array($nb, (int)(100 * $nb / $opened), $login);
                 }
                 arsort($ownerStatistics);
+
+                // Issue due date statistics
+                $overdue = $prj->getIssueCountByDueDate();
+                $combined_opened = $overdue + $opened;
+                $duedateStatistics = array();
+                if ($combined_opened > 0) {
+                    $duedateStatistics = array($overdue, (int)(100 * $overdue / $combined_opened));
+                }
 
                 // Issue class tag statistics
                 $grouped_tags = $prj->getTagCloud();
@@ -154,6 +166,7 @@ class IDF_Views_Issue
                                                      'project' => $prj,
                                                      'tagStatistics' => $tagStatistics,
                                                      'ownerStatistics' => $ownerStatistics,
+						   							 'duedateStatistics' => $duedateStatistics,
                                                      'status' => $status,
                                                      ),
                                                $request);
@@ -187,9 +200,16 @@ class IDF_Views_Issue
         $nb_open = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
         $sql = new Pluf_SQL('project=%s AND id IN ('.$issue_ids.') AND status IN ('.implode(', ', $ctags).')', array($prj->id));
         $nb_closed = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
+        $sql = new Pluf_SQL('project=%s AND id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array($prj->id));
+        $nb_overdue = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
 
         // Generate a filter for the paginator
         switch ($match[2]) {
+        case 'overdue':
+            $title = sprintf(__('Watch List: Overdue Issues for %s'), (string) $prj);
+            $summary = __('This table shows the overdue issues in your watch list for %s project.', (string) $prj);
+            $f_sql = new Pluf_SQL('project=%s AND id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array($prj->id));
+            break;
         case 'closed':
             $title = sprintf(__('Watch List: Closed Issues for %s'), (string) $prj);
             $summary = __('This table shows the closed issues in your watch list for %s project.', (string) $prj);
@@ -220,9 +240,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -231,6 +252,7 @@ class IDF_Views_Issue
                                                      'page_title' => $title,
                                                      'open' => $nb_open,
                                                      'closed' => $nb_closed,
+                                                     'overdue' => $nb_overdue,
                                                      'issues' => $pag,
                                                      ),
                                                $request);
@@ -270,9 +292,16 @@ class IDF_Views_Issue
         $nb_open = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
         $sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $ctags).')', array());
         $nb_closed = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
+        $sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array());
+        $nb_overdue = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
 
         // Generate a filter for the paginator
         switch ($match[1]) {
+        case 'overdue':
+            $title = sprintf(__('Watch List: Overdue Issues'));
+            $summary = __('This table shows the overdue issues in your watch list.');
+            $f_sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array());
+            break;
         case 'closed':
             $title = sprintf(__('Watch List: Closed Issues'));
             $summary = __('This table shows the closed issues in your watch list.');
@@ -302,9 +331,10 @@ class IDF_Views_Issue
              array('summary', 'IDF_Views_Issue_SummaryAndLabelsUnknownProject', __('Summary')),
              array('project', 'Pluf_Paginator_FkToString', __('Project')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'project', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'project', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -312,6 +342,7 @@ class IDF_Views_Issue
                                                array('page_title' => $title,
                                                      'open' => $nb_open,
                                                      'closed' => $nb_closed,
+                                                     'overdue' => $nb_overdue,
                                                      'issues' => $pag,
                                                      ),
                                                $request);
@@ -390,9 +421,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -443,6 +475,7 @@ class IDF_Views_Issue
                                     'preview' => $preview,
                                     'issue' => new IDF_Issue(),
                                     ),
+                              self::getDateShortcuts(),
                               self::autoCompleteArrays($prj)
                               );
         if ($api == true) return $params;
@@ -461,7 +494,7 @@ class IDF_Views_Issue
     public function searchStatus($request, $match)
     {
         $query  = !isset($request->REQUEST['q']) ? '' : $request->REQUEST['q'];
-        $status = in_array($match[2], array('open', 'closed')) ? $match[2] : 'open';
+        $status = in_array($match[2], array('open', 'closed', 'overdue')) ? $match[2] : 'open';
         return $this->doSearch($request, $query, $status);
     }
 
@@ -470,7 +503,7 @@ class IDF_Views_Issue
     {
         $query  = !isset($request->REQUEST['q']) ? '' : $request->REQUEST['q'];
         $tag_id = intval($match[2]);
-        $status = in_array($match[3], array('open', 'closed')) ? $match[3] : 'open';
+        $status = in_array($match[3], array('open', 'closed', 'overdue')) ? $match[3] : 'open';
         return $this->doSearch($request, $query, $status, $tag_id);
     }
 
@@ -490,6 +523,10 @@ class IDF_Views_Issue
         $title = sprintf(__('Search issues - %s'), $query);
         if ($status === 'closed') {
             $title = sprintf(__('Search closed issues - %s'), $query);
+        } elseif ($status === 'overdue') {
+            $title = sprintf(__('Search overdue issues - %s'), $query);
+            $status = 'open';
+            $overdue_status = true;
         }
 
         // using Plufs ResultSet implementation here is inefficient, because
@@ -510,6 +547,10 @@ class IDF_Views_Issue
             'AND status IN ('.implode(', ', $otags).') '.
             ($tag_id !== null ? 'AND idf_tag_id='.$tag_id.' ' : '')
         );
+        if (isset($overdue_status)) {
+            $sql2 = new Pluf_SQL('due_dtime < NOW()');
+            $sql->SAnd($sql2);
+        }
         $model = new IDF_Issue();
         $issues = $model->getList(array('filter' => $sql->gen(), 'view' => 'join_tags'));
 
@@ -542,6 +583,7 @@ class IDF_Views_Issue
             'id' => __('Id'),
             array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
             array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+            array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
             array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
         ));
         // disable paginating
@@ -562,6 +604,7 @@ class IDF_Views_Issue
         }
 
         // get stats about the issues
+        $overdue = $prj->getIssueCountByDueDate('overdue', $tag, $issue_ids);
         $open = $prj->getIssueCountByStatus('open', $tag, $issue_ids);
         $closed = $prj->getIssueCountByStatus('closed', $tag, $issue_ids);
 
@@ -583,6 +626,7 @@ class IDF_Views_Issue
             'status' => $status,
             'open' => $open,
             'closed' => $closed,
+            'overdue' => $overdue,
             'tag' => $tag,
             'all_tags' => $grouped_tags,
         );
@@ -669,6 +713,7 @@ class IDF_Views_Issue
                                                      'next_issue_id' => $next_issue_id,
                                                      'related_issues' => $related_issues,
                                                      ),
+                                               self::getDateShortcuts(),
                                                $arrays),
                                                $request);
     }
@@ -746,6 +791,7 @@ class IDF_Views_Issue
         // Get stats about the issues
         $open = $prj->getIssueCountByStatus('open');
         $closed = $prj->getIssueCountByStatus('closed');
+        $overdue = $prj->getIssueCountByDueDate();
         // Paginator to paginate the issues
         $pag = new Pluf_Paginator(new IDF_Issue());
         $pag->class = 'recent-issues';
@@ -765,9 +811,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -776,6 +823,59 @@ class IDF_Views_Issue
                                                      'page_title' => $title,
                                                      'open' => $open,
                                                      'closed' => $closed,
+                                                     'overdue' => $overdue,
+                                                     'issues' => $pag,
+                                                     'cloud' => 'closed_issues',
+                                                     ),
+                                               $request);
+    }
+
+    /**
+     * View list of issues for a given project with a given status.
+     */
+    public $listOverdue_precond = array('IDF_Precondition::accessIssues');
+    public function listOverdue($request, $match)
+    {
+        $prj = $request->project;
+        $status = __('Overdue');
+
+        $title = sprintf(__('%s %s Issues'), (string) $prj, (string) $status);
+        // Get stats about the issues
+        $open = $prj->getIssueCountByStatus('open');
+        $closed = $prj->getIssueCountByStatus('closed');
+        $overdue = $prj->getIssueCountByDueDate();
+        // Paginator to paginate the issues
+        $pag = new Pluf_Paginator(new IDF_Issue());
+        $pag->class = 'recent-issues';
+        $pag->item_extra_props = array('project_m' => $prj,
+                                       'shortname' => $prj->shortname,
+                                       'current_user' => $request->user);
+        $pag->summary = __('This table shows the overdue issues.');
+        $otags = $prj->getTagIdsByStatus('open');
+        if (count($otags) == 0) $otags[] = 0;
+        $pag->forced_where = new Pluf_SQL('project=%s AND due_dtime < NOW() AND status IN ('.implode(', ', $otags).')', array($prj->id));
+        $pag->action = array('IDF_Views_Issue::listOverdue', array($prj->shortname, $status));
+        $pag->sort_order = array('due_dtime', 'DESC'); // will be reverted
+        $pag->sort_reverse_order = array('due_dtime');
+        $pag->sort_link_title = true;
+        $pag->extra_classes = array('a-c', '', 'a-c', '');
+        $list_display = array(
+             'id' => __('Id'),
+             array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
+             array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
+             array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
+                              );
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
+        $pag->items_per_page = 10;
+        $pag->no_results_text = __('No issues were found.');
+        $pag->setFromRequest($request);
+        return Pluf_Shortcuts_RenderToResponse('idf/issues/index.html',
+                                               array('project' => $prj,
+                                                     'page_title' => $title,
+                                                     'open' => $open,
+                                                     'closed' => $closed,
+                                                     'overdue' => $overdue,
                                                      'issues' => $pag,
                                                      'cloud' => 'closed_issues',
                                                      ),
@@ -791,12 +891,17 @@ class IDF_Views_Issue
         $prj = $request->project;
         $tag = Pluf_Shortcuts_GetObjectOr404('IDF_Tag', $match[2]);
         $status = $match[3];
-        if ($tag->project != $prj->id or !in_array($status, array('open', 'closed'))) {
+        if ($tag->project != $prj->id or !in_array($status, array('open', 'closed', 'overdue'))) {
             throw new Pluf_HTTP_Error404();
         }
         if ($status == 'open') {
             $title = sprintf(__('%1$s Issues with Label %2$s'), (string) $prj,
                              (string) $tag);
+        } elseif ($status == 'overdue') {
+            $title = sprintf(__('%1$s Overdue Issues with Label %2$s'), (string) $prj,
+                             (string) $tag);
+            $overdue_status = true;
+            $status = 'open';
         } else {
             $title = sprintf(__('%1$s Closed Issues with Label %2$s'),
                              (string) $prj, (string) $tag);
@@ -804,6 +909,7 @@ class IDF_Views_Issue
         // Get stats about the open/closed issues having this tag.
         $open = $prj->getIssueCountByStatus('open', $tag);
         $closed = $prj->getIssueCountByStatus('closed', $tag);
+        $overdue = $prj->getIssueCountByDueDate('overdue', $tag);
         // Paginator to paginate the issues
         $pag = new Pluf_Paginator(new IDF_Issue());
         $pag->model_view = 'join_tags';
@@ -815,6 +921,9 @@ class IDF_Views_Issue
         $otags = $prj->getTagIdsByStatus($status);
         if (count($otags) == 0) $otags[] = 0;
         $pag->forced_where = new Pluf_SQL('project=%s AND idf_tag_id=%s AND status IN ('.implode(', ', $otags).')', array($prj->id, $tag->id));
+        if (isset($overdue_status)) {
+            $pag->forced_where->SAnd(new Pluf_SQL('due_dtime < NOW()'));
+        }
         $pag->action = array('IDF_Views_Issue::listLabel', array($prj->shortname, $tag->id, $status));
         $pag->sort_order = array('modif_dtime', 'ASC'); // will be reverted
         $pag->sort_reverse_order = array('modif_dtime');
@@ -824,9 +933,10 @@ class IDF_Views_Issue
              'id' => __('Id'),
              array('summary', 'IDF_Views_Issue_SummaryAndLabels', __('Summary')),
              array('status', 'IDF_Views_Issue_ShowStatus', __('Status')),
+             array('due_dtime', 'IDF_Views_Issue_DueDate', __('Due Date')),
              array('modif_dtime', 'Pluf_Paginator_DateAgo', __('Last Updated')),
                               );
-        $pag->configure($list_display, array(), array('id', 'status', 'modif_dtime'));
+        $pag->configure($list_display, array(), array('id', 'status', 'due_dtime', 'modif_dtime'));
         $pag->items_per_page = 10;
         $pag->no_results_text = __('No issues were found.');
         $pag->setFromRequest($request);
@@ -842,6 +952,7 @@ class IDF_Views_Issue
                                                      'open' => $open,
                                                      'label' => $tag,
                                                      'closed' => $closed,
+                                                     'overdue' => $overdue,
                                                      'issues' => $pag,
                                                      ),
                                                $request);
@@ -1002,6 +1113,28 @@ class IDF_Views_Issue
         $auto['auto_relation_types'] = substr($auto['auto_relation_types'], 0, -2);
         return $auto;
     }
+
+    public static function getDateShortcuts()
+    {
+        return array(
+            'date_shortcuts' => array(
+                __('Soon') => array(
+                    __('Today') => date('Y-m-d'),
+                    __('Tomorrow') => date('Y-m-d', strtotime('tomorrow')),
+                    __('2 Days') => date('Y-m-d', strtotime('+2 days')),
+                ),
+                __('Midterm') => array(
+                    __('Friday') => date('Y-m-d', strtotime('next friday')),
+                    __('1 Week') => date('Y-m-d', strtotime('+1 week')),
+                    __('A Fortnight') => date('Y-m-d', strtotime('+2 week')),
+                ),
+                __('Longterm') => array(
+                    __('End of the Month') => date('Y-m-d', strtotime('last day of this month')),
+                    __('1 Month') => date('Y-m-d', strtotime('+1 month')),
+                ),
+            ),
+        );
+    }
 }
 
 /**
@@ -1013,6 +1146,16 @@ function IDF_Views_Issue_SummaryAndLabelsUnknownProject($field, $issue, $extra='
     $shortname = $issue->get_project()->shortname;
     $issue->__set('shortname', $shortname);
     return IDF_Views_Issue_SummaryAndLabels ($field, $issue, $extra);
+}
+
+/**
+ * Get the date value for the Due Date table column
+ */
+function IDF_Views_Issue_DueDate($field, $issue, $extra='')
+{
+    if($issue->$field) {
+        return Pluf_Template_dateFormat($issue->$field);
+    }
 }
 
 /**
@@ -1037,8 +1180,12 @@ function IDF_Views_Issue_SummaryAndLabels($field, $issue, $extra='')
         $s = '<img style="vertical-align: text-bottom;" src="'.Pluf_Template_Tag_MediaUrl::url('/idf/img/star.png').'" alt="'.__('On your watch list.').'" /> ';
     }
     $out = '';
+    if ('' != $issue->due_dtime and (time() >= strtotime($issue->due_dtime)) and
+	    in_array($issue->status, $issue->get_project()->getTagIdsByStatus('open'))) {
+        $out = ' <span class="overdue">' . __('overdue') . '</span>';
+    }
     if (count($tags)) {
-        $out = '<br /><span class="note">'.implode(', ', $tags).'</span>';
+        $out .= '<br /><span class="note">'.implode(', ', $tags).'</span>';
     }
     return $s.sprintf('<a href="%s">%s</a>', $edit, Pluf_esc($issue->summary)).$out;
 }

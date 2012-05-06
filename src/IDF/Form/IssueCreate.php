@@ -112,6 +112,12 @@ class IDF_Form_IssueCreate extends Pluf_Form
                                                        'size' => 15,
                                                                     ),
                                             ));
+            $this->fields['due_dtime'] = new Pluf_Form_Field_Date(
+                                          array('required' => false,
+                                                'label' => __('Due date'),
+                                                'initial' => '',
+                                                'widget_attrs' => array('size' => 15,),
+                                              ));
 
             $this->fields['relation_type0'] = new Pluf_Form_Field_Varchar(
                           array('required' => false,
@@ -368,6 +374,7 @@ class IDF_Form_IssueCreate extends Pluf_Form
             $issue->status = new IDF_Tag($_t[0]); // first one is the default
             $issue->owner = null;
         }
+        $issue->due_dtime = $this->cleaned_data['due_dtime'];
         $issue->summary = trim($this->cleaned_data['summary']);
         $issue->create();
         foreach ($tags as $tag) {

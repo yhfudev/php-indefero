@@ -63,6 +63,24 @@
 </td>
 </tr>
 <tr>
+<th>{$form.f.due_dtime.labelTag}:</th>
+<td>{if $form.f.due_dtime.errors}{$form.f.due_dtime.fieldErrors}{/if}
+{$form.f.due_dtime|unsafe}
+<div id="due_dtime_wrapper">
+    <a href="#" id="due_dtime_shortcut_link">Date shortcuts&hellip; ▾</a>
+    {if $date_shortcuts}
+    <dl id="due_dtime_more_shortcuts" style="display: none">
+        {foreach $date_shortcuts as $time_span => $shortcuts}
+            <dt>{$time_span}</dt>
+            {foreach $shortcuts as $title => $date}
+                <dd><a href="javascript:void(0);" rel="{$date}" class="due_dtime_shortcut">{$title}</a></dd>
+            {/foreach}
+        {/foreach}
+    </dl>
+    {/if}
+</div>
+</td>
+<tr>
 <th>{$form.f.relation_type0.labelTag}:</th>
 <td>
 {if $form.f.relation_type0.errors}{$form.f.relation_type0.fieldErrors}{/if}
@@ -108,7 +126,21 @@
 <script type="text/javascript">
 document.getElementById('id_summary').focus();{literal}
 $(document).ready(function(){
-
+    $("#id_due_dtime").datepicker({
+        changeYear: true,
+        changeMonth: true,
+        yearRange: '-0:+5',
+        constrainInput: false,
+        dateFormat: 'yy-mm-dd'
+    });
+    $('#due_dtime_wrapper').mouseover(function(){
+        $('#due_dtime_more_shortcuts').show();
+    }).mouseout(function(){
+        $('#due_dtime_more_shortcuts').hide();
+    });
+    $(".due_dtime_shortcut").click(function(){
+        $('#id_due_dtime').val($(this).attr('rel'));
+    });
     // Hide the upload forms, we insert before the first attach file
     // row an "Attach File" little link.
     // We hide all the rows.

@@ -91,6 +91,13 @@ class IDF_Issue extends Pluf_Model
                                   'model' => 'IDF_Tag',
                                   'verbose' => __('labels'),
                                   ),
+                            'due_dtime' =>
+                            array(
+                                  'type' => 'Pluf_DB_Field_Datetime',
+                                  'blank' => true,
+                                  'is_null' => true,
+                                  'verbose' => __('due date'),
+                                  ),
                             'status' =>
                             array(
                                   'type' => 'Pluf_DB_Field_Foreignkey',
@@ -149,10 +156,27 @@ class IDF_Issue extends Pluf_Model
         IDF_Search::remove($this);
     }
 
+    function restore()
+    {
+        // Note: If a due date has not been set then it should
+        // be set to null and not a useless/confusing date so...
+        if ('0000-00-00 00:00:00' === $this->due_dtime) {
+            $this->due_dtime = null;
+        }
+    }
+
     function preSave($create=false)
     {
         if ($this->id == '') {
             $this->creation_dtime = gmdate('Y-m-d H:i:s');
+        }
+        // Note: If a due date is supplied then it must have
+        // a time appended to it so that calculations of when
+        // an issue falls overdue are accurate. In this case
+        // 23:59:59 is added to signify the end of the day.
+        if ($this->due_dtime and !empty($this->due_dtime)) {
+            $this->due_dtime = date('Y-m-d 23:59:59',
+                strtotime($this->due_dtime));
         }
         $this->modif_dtime = gmdate('Y-m-d H:i:s');
     }

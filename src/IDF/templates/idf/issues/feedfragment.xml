@@ -14,7 +14,7 @@
 </ul>{/if}
 {if $c.changes}
 {foreach $c.changes as $w => $v}
-<strong>{if $w == 'su'}{trans 'Summary:'}{/if}{if $w == 'st'}{trans 'Status:'}{/if}{if $w == 'ow'}{trans 'Owner:'}{/if}{if $w == 'lb'}{trans 'Labels:'}{/if}{if $w == 'rel'}{trans 'Relations:'}{/if}</strong>
+<strong>{if $w == 'su'}{trans 'Summary:'}{/if}{if $w == 'st'}{trans 'Status:'}{/if}{if $w == 'ow'}{trans 'Owner:'}{/if}{if $w == 'lb'}{trans 'Labels:'}{/if}{if $w == 'rel'}{trans 'Relations:'}{/if}{if $w == 'du'}{trans 'Due date:'}{/if}</strong>
 {if $w == 'lb' or $w == 'rel'}
   {foreach $v as $t => $ls}
     {foreach $ls as $l}

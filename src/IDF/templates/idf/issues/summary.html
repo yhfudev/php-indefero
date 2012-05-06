@@ -103,6 +103,34 @@
     </table>
     </div>
 {/if}
+
+{if $duedateStatistics}
+    <div>
+    <h2>{blocktrans}Unresolved: By Due Date{/blocktrans}</h2>
+    <table class='issue-summary'>
+    <tbody>
+        <tr>
+        <td class="name">
+        {aurl 'url', 'IDF_Views_Issue::listOverdue', array($project.shortname, 'overdue', 'due')}
+        <a href="{$url}">{blocktrans}Overdue{/blocktrans}</a>
+        </td>
+        <td class="count">{$duedateStatistics[0]}</td>
+        <td class="graph">
+            <table class='graph'>
+            <tbody><tr>
+            <td style="width:{$duedateStatistics[1] * 0.8 + 1}%" class="graph-color" valign="center">
+            <div class="colour-bar"></div>
+            </td>
+            <td class="graph-percent">{$duedateStatistics[1]}%</td>
+            </tr>
+            </tbody>
+            </table>
+        </td>
+        </tr>
+    </tbody>
+    </table>
+    </div>
+{/if}
 </div>
 {/if}
 {/block}
