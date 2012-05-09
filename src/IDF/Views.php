@@ -381,6 +381,7 @@ class IDF_Views
         $db =& Pluf::db();
         // the administrator can see all projects
         if ($user->administrator) {
+            $ids = array();
             $sql_results = $db->select(
                 'SELECT id FROM '.Pluf::f('db_table_prefix', '').'idf_projects'
             );
@@ -505,7 +506,7 @@ class IDF_Views
      */
     public static function getProjectsStatistics($projects)
     {
-        $projectIds = array();
+        $projectIds = array(0);
         foreach ($projects as $project) {
             $projectIds[] = $project->id;
         }
