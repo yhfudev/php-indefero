@@ -21,27 +21,35 @@
 #
 # ***** END LICENSE BLOCK ***** */
 
-function IDF_Migrations_25NullableProjectInTag_up($params=null)
-{
-    $engine = Pluf::f('db_engine');
-    $db = Pluf::db();
+/**
+ * Add the private column for the project.
+ */
 
-    if ($engine === 'PostgreSQL') {
-        $db->execute('ALTER TABLE '.$db->pfx.'idf_tags ALTER COLUMN project DROP NOT NULL');
-    } else if ($engine === 'MySQL') {
-        $db->execute('ALTER TABLE '.$db->pfx.'idf_tags MODIFY project MEDIUMINT NULL');
-        // this is only needed for non-transactional setups where MySQL set 0 as default value
-        $db->execute('UPDATE '.$db->pfx.'idf_tags SET project=NULL WHERE project=0');
+function IDF_Migrations_27IssueDueDate_up($params=null)
+{
+    $table = Pluf::factory('IDF_Issue')->getSqlTable();
+    $sql = array();
+    $sql['PostgreSQL'] = 'ALTER TABLE '.$table.' ADD COLUMN "due_dtime" TIMESTAMP';
+    $sql['MySQL'] = 'ALTER TABLE '.$table.' ADD COLUMN `due_dtime` DATETIME';
+    $db = Pluf::db();
+    $engine = Pluf::f('db_engine');
+    if (!isset($sql[$engine])) {
+        throw new Exception('SQLite complex migration not supported.');
     }
+    $db->execute($sql[$engine]);
 }
 
-function IDF_Migrations_25NullableProjectInTag_down($params=null)
+function IDF_Migrations_27IssueDueDate_down($params=null)
 {
-    $engine = Pluf::f('db_engine');
+    $table = Pluf::factory('IDF_Issue')->getSqlTable();
+    $sql = array();
+    $sql['PostgreSQL'] = 'ALTER TABLE '.$table.' DROP COLUMN "due_dtime"';
+    $sql['MySQL'] = 'ALTER TABLE '.$table.' DROP COLUMN `due_dtime`';
     $db = Pluf::db();
-    if ($engine === 'PostgreSQL') {
-        $db->execute('ALTER TABLE '.$db->pfx.'idf_tags ALTER COLUMN project SET NOT NULL');
-    } else if ($engine === 'MySQL') {
-        $db->execute('ALTER TABLE '.$db->pfx.'idf_tags MODIFY project MEDIUMINT NOT NULL');
+    $engine = Pluf::f('db_engine');
+    if (!isset($sql[$engine])) {
+        throw new Exception('SQLite complex migration not supported.');
     }
+    $db->execute($sql[$engine]);
+
 }

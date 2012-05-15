@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008-2011 Céondo Ltd and contributors.
+# Copyright (C) 2008-2012 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,35 +21,26 @@
 #
 # ***** END LICENSE BLOCK ***** */
 
-/**
- * Add the private column for the project.
- */
-
-function IDF_Migrations_26IssueDueDate_up($params=null)
+function IDF_Migrations_26NullableActivityInProject_up($params=null)
 {
-    $table = Pluf::factory('IDF_Issue')->getSqlTable();
-    $sql = array();
-    $sql['PostgreSQL'] = 'ALTER TABLE '.$table.' ADD COLUMN "due_dtime" TIMESTAMP';
-    $sql['MySQL'] = 'ALTER TABLE '.$table.' ADD COLUMN `due_dtime` DATETIME';
-    $db = Pluf::db();
     $engine = Pluf::f('db_engine');
-    if (!isset($sql[$engine])) {
-        throw new Exception('SQLite complex migration not supported.');
+    $db = Pluf::db();
+    if ($engine === 'PostgreSQL') {
+        $db->execute('ALTER TABLE '.$db->pfx.'idf_projects ALTER COLUMN current_activity DROP NOT NULL');
+    } else if ($engine === 'MySQL') {
+        $db->execute('ALTER TABLE '.$db->pfx.'idf_projects MODIFY current_activity MEDIUMINT NULL');
+        // this is only needed for non-transactional setups where MySQL set 0 as default value
+        $db->execute('UPDATE '.$db->pfx.'idf_projects SET current_activity=NULL WHERE current_activity=0');
     }
-    $db->execute($sql[$engine]);
 }
 
-function IDF_Migrations_26IssueDueDate_down($params=null)
+function IDF_Migrations_26NullableActivityInProject_down($params=null)
 {
-    $table = Pluf::factory('IDF_Issue')->getSqlTable();
-    $sql = array();
-    $sql['PostgreSQL'] = 'ALTER TABLE '.$table.' DROP COLUMN "due_dtime"';
-    $sql['MySQL'] = 'ALTER TABLE '.$table.' DROP COLUMN `due_dtime`';
-    $db = Pluf::db();
     $engine = Pluf::f('db_engine');
-    if (!isset($sql[$engine])) {
-        throw new Exception('SQLite complex migration not supported.');
+    $db = Pluf::db();
+    if ($engine === 'PostgreSQL') {
+        $db->execute('ALTER TABLE '.$db->pfx.'idf_projects ALTER COLUMN current_activity SET NOT NULL');
+    } else if ($engine === 'MySQL') {
+        $db->execute('ALTER TABLE '.$db->pfx.'idf_projects MODIFY current_activity MEDIUMINT NOT NULL');
     }
-    $db->execute($sql[$engine]);
-
 }
