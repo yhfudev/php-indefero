@@ -144,6 +144,11 @@ po-stats:
 		> indefero-$*-`git log $* -n 1 \
 		--pretty=format:%h`.zip
 
+%-tarfile:
+	@git archive --format=tar --prefix="indefero/" $* \
+		> indefero-$*-`git log $* -n 1 \
+		--pretty=format:%h`.tar
+
 db-install:
 	@cd src && php "$(PLUF_PATH)/migrate.php" --conf=IDF/conf/idf.php -a -d -i
 
