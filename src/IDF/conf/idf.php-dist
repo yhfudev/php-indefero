@@ -42,6 +42,13 @@ $cfg['secret_key'] = '';
 $cfg['debug'] = true;
 
 
+# This is used to help generate the stats at the bottom of the page
+# This can also be used to help debug DB issues as it will get passed
+# to Pluf_DB_Stats_getConnection as the debug parameter
+# If you set this to false then the query stats will not be shown
+$cfg['db_debug'] = true;
+
+
 # ---------------------------------------------------------------------------- #
 #                               Path section                                   #
 # ---------------------------------------------------------------------------- #
@@ -137,19 +144,19 @@ $cfg['languages'] = array('en', 'fr', 'de', 'es_ES', 'ru');
 
 # This is a general lock to enable or disable the mail sending process.
 # True enables mail sending, false disables it.
-$cfg['send_emails'] = false;
+$cfg['send_emails'] = true;
 
 # The mail backend to use: mail, sendmail, or smtp
 $cfg['mail_backend'] = 'mail';
 
 # Mails sent by indefero will have thoses headers:
-$cfg['from_email'] = 'sender@example.com';
-$cfg['bounce_email'] = 'no-reply@example.com';
+$cfg['from_email'] = 'email@mydomain.com';
+
+$cfg['bounce_email'] = ' ';
 
 # The following persons will get an email in case of errors, i.e. when the
 # system is in not in debug mode (see $cfg['debug'] above).
 $cfg['admins'] = array(
-    array('You', 'you@example.com'),
     array('Bob', 'bob@example.com'),
 );
 
@@ -317,7 +324,7 @@ $cfg['idf_plugin_syncgit_base_repositories'] = '/home/git/repositories';
 #
 
 # Uncomment this line to enable the SVN support.
-# $cfg['allowed_scm']['svn'] = 'IDF_Scm_Svn';
+$cfg['allowed_scm']['svn'] = 'IDF_Scm_Svn';
 
 # In case of subversion, you can either use a local or a remote repository.
 # The forge admin can configure a remote repository directly from the
@@ -443,6 +450,8 @@ $cfg['pluf_use_rowpermission'] = true;
 $cfg['middleware_classes'] = array(
          'Pluf_Middleware_Csrf',
          'Pluf_Middleware_Session',
+	 //'Pluf_Middleware_Debug',
+	 'Pluf_Middleware_Stats',
          'IDF_Middleware',
          'Pluf_Middleware_Translation',
          );
@@ -531,7 +540,7 @@ $cfg['activity_section_weights'] = array(
     'source'    => 4,
     'issues'    => 2,
     'wiki'      => 2,
-    'downloads' => 1,
+    'downloads' => 2,
     'review'    => 1,
 );
 
@@ -544,4 +553,9 @@ $cfg['activity_section_weights'] = array(
 # high enough to show a proper activity index for those projects as well.
 $cfg['activity_lookback'] = 7;
 
+//$cfg["log_level"] = Pluf_Log::ALL;
+//$cfg["log_handler"] = 'Pluf_Log_File';
+//$cfg["log_delayed"] = true;
+//$cfg["pluf_log_file"] = '/home/www/pluf.log';
+//Pluf_Log::$level = Pluf_Log::ALL;
 return $cfg;
