@@ -47,13 +47,28 @@ class IDF_Plugin_SyncGit
             Pluf_Log::debug('IDF_Plugin_SyncGit plugin not configured.');
             return;
         }
-        if ($signal != 'gitpostupdate.php::run') {
-            Pluf_Log::event('IDF_Plugin_SyncGit', 'create', 
+        $plug = new IDF_Plugin_SyncGit();
+        switch ($signal) {
+        case 'IDF_Project::created':
+            $plug->processCreate($params['project']);
+            break;
+        case 'IDF_Key::postSave':
+            break;
+        case 'IDF_Key::preDelete':
+            $plug->processDelete($params['project']);
+            break;
+        case 'IDF_Project::membershipsUpdated':
+            //$plug->processSyncAuthz($params['project']);
+            break;
+        case 'gitpostupdate.php::run':
+            self::postUpdate($signal, $params);
+            break;
+        default:
+            Pluf_Log::event($P, 'create', 
                             Pluf::f('idf_plugin_syncgit_sync_file'));
             @touch(Pluf::f('idf_plugin_syncgit_sync_file'));
             @chmod(Pluf::f('idf_plugin_syncgit_sync_file'), 0777);
-        } else {
-            self::postUpdate($signal, $params);
+            break;
         }
     }
 
@@ -78,4 +93,82 @@ class IDF_Plugin_SyncGit
         IDF_Scm::syncTimeline($project, true);
         Pluf_Log::event(array('IDF_Plugin_SyncGit::postUpdate', 'sync', array($pname, $project->id)));
     }
+
+    /**
+     * Run git command to create the corresponding Git
+     * repository.
+     *
+     * @param IDF_Project 
+     * @return bool Success
+     */
+    function processCreate($project)
+    {
+        if ($project->getConf()->getVal('scm') != 'git') {
+            Pluf_Log::event(array('IDF_Plugin_SyncGit::processCreate', 'Git exec not installed.', array($project)));
+            return false;
+        }
+        $shortname = $project->shortname;
+        if (false===($git_reporoot_path=Pluf::f('idf_plugin_syncgit_base_repositories',false))) {
+            throw new Pluf_Exception_SettingError("'idf_plugin_syncgit_base_repositories' must be defined in your configuration file.");
+        }
+        if (file_exists($git_reporoot_path.'/'.$shortname)) {
+            throw new Exception(sprintf(__('The repository %s already exists.'),
+                                        $git_reporoot_path.'/'.$shortname));
+        }
+        $return = 0;
+        $output = array();
+        $path = escapeshellarg($git_reporoot_path.'/'.$shortname.'.git');
+        $exec = Pluf::f('git_path', 'git');
+
+        # or git --bare --git-dir projxxx init
+        $cmd = Pluf::f('idf_exec_cmd_prefix', '').$exec.' --bare init '.$path;
+        $ll = exec($cmd, $output, $return);
+        if ($return != 0) {
+            Pluf_Log::error(array('IDF_Plugin_SyncGit::processCreate', 
+                                  'Error', 
+                                  array('path' => $git_reporoot_path.'/'.$shortname,
+                                        'output' => $output)));
+            return;
+        }
+
+        $cmd = Pluf::f('idf_exec_cmd_prefix', '').' cp -p '.$path.'/hooks/post-update.sample '.$path.'/hooks/post-update； cd '.$path.'/hooks/; ./post-update';
+        $ll = exec($cmd, $output, $ret2);
+        if ($ret2 != 0) {
+            Pluf_Log::warn(array('IDF_Plugin_SyncGit::processCreate', 
+                                  'post-update hook creation error', 
+                                  array('path' => $path.'/hooks/post-update',
+                                        'output' => $output)));
+            return;
+        }
+
+        return ($return == 0);
+    }
+
+    /**
+     * Remove the project from the drive and update the access rights.
+     *
+     * @param IDF_Project 
+     * @return bool Success
+     */
+    function processDelete($project)
+    {
+        if (!Pluf::f('idf_plugin_syncgit_remove_orphans', false)) {
+            //Pluf_Log::event(array('IDF_Plugin_SyncGit::processDelete', 'idf_plugin_syncgit_remove_orphans set to false.', array($project)));
+            return;
+        }
+        if ($project->getConf()->getVal('scm') != 'git') {
+            Pluf_Log::event(array('IDF_Plugin_SyncGit::processDelete', 'Git exec not installed.', array($project)));
+            return false;
+        }
+        $this->SyncAccess($project); // exclude $project
+        $shortname = $project->shortname;
+        if (false===($git_reporoot_path=Pluf::f('idf_plugin_syncgit_base_repositories',false))) {
+            throw new Pluf_Exception_SettingError("'idf_plugin_syncgit_base_repositories' must be defined in your configuration file.");
+        }
+        if (file_exists($git_reporoot_path.'/'.$shortname)) {
+            $cmd = Pluf::f('idf_exec_cmd_prefix', '').'rm -rf '.$git_reporoot_path.'/'.$shortname;
+            exec($cmd);
+        }
+    }
+
 }
