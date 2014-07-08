@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2010 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,9 +65,9 @@ class IDF_FileUtil
         }
         $table = array();
         $i = 1;
-        foreach (preg_split("/\015\012|\015|\012/", $content) as $line) {
+        foreach (self::splitIntoLines($content) as $line) {
             $table[] = '<tr class="c-line"><td class="code-lc" id="L'.$i.'"><a href="#L'.$i.'">'.$i.'</a></td>'
-                .'<td class="code mono'.$pretty.'">'.IDF_Diff::padLine(Pluf_esc($line)).'</td></tr>';
+                .'<td class="code mono'.$pretty.'">'.self::emphasizeControlCharacters(Pluf_esc($line)).'</td></tr>';
             $i++;
         }
         return Pluf_Template::markSafe(implode("\n", $table));
@@ -141,6 +141,53 @@ class IDF_FileUtil
             }
         }
         return $res;
+    }
+
+    /**
+     * Splits a string into separate lines while retaining the individual
+     * line ending character for every line.
+     *
+     * OS 9 line endings are not supported.
+     *
+     * @param string content
+     * @param boolean if true, skip completely empty lines
+     * @return string
+     */
+    public static function splitIntoLines($content, $skipEmpty = false)
+    {
+        $last_off = 0;
+        $lines = array();
+        while (preg_match("/\r\n|\n/", $content, $m, PREG_OFFSET_CAPTURE, $last_off)) {
+            $next_off = strlen($m[0][0]) + $m[0][1];
+            $line = substr($content, $last_off, $next_off - $last_off);
+            $last_off = $next_off;
+            if ($line !== $m[0][0] || !$skipEmpty) $lines[] = $line;
+        }
+        $line = substr($content, $last_off);
+        if ($line !== false && strlen($line) > 0) $lines[] = $line;
+        return $lines;
+    }
+
+    /**
+     * This translates most of the C0 ASCII control characters into
+     * their visual counterparts in the 0x24## unicode plane
+     * (http://en.wikipedia.org/wiki/C0_and_C1_control_codes).
+     *
+     * We could add DEL (0x7F) to this set, but unfortunately this
+     * is not nicely mapped to 0x247F in the control plane, but 0x2421
+     * and adding an if expression below just for this is a little bit
+     * of a hassle. And of course, the more esoteric ones from C1 are
+     * missing as well...
+     *
+     * @param string $content
+     * @return string
+     */
+    public static function emphasizeControlCharacters($content)
+    {
+        return preg_replace(
+            '/([\x00-\x1F])/ue',
+            '"<span class=\"ctrl-char\" title=\"0x".bin2hex("\\1")."\">&#x24".bin2hex("\\1")."</span>"',
+            $content);
     }
 
     /**

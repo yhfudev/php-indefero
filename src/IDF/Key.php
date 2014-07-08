@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,10 @@ class IDF_Key extends Pluf_Model
         if (preg_match('#^\[pubkey ([^\]]+)\]\s*(\S+)\s*\[end\]$#', $this->content, $m)) {
             return array('mtn', $m[1], $m[2]);
         }
-        else if (preg_match('#^ssh\-[a-z]{3}\s(\S+)(?:\s(\S+))?$#', $this->content, $m)) {
+        else if (preg_match('#^ssh\-(?:dss|rsa)\s(\S+)(?:\s(.*))?$#', $this->content, $m)) {
+            if (!isset($m[2])) {
+                $m[2] = "";
+            }
             return array('ssh', $m[2], $m[1]);
         }
 

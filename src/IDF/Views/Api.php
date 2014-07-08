@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
  * JSON instead of HTML.
  *
  * A special precondition is used to set the $request->user from the
- * _login, _hash and _salt parameters. 
+ * _login, _hash and _salt parameters.
  */
 class IDF_Views_Api
 {
@@ -55,6 +55,7 @@ class IDF_Views_Api
      * Create a new issue.
      */
     public $issueCreate_precond = array('IDF_Precondition::apiSetUser',
+                                        'Pluf_Precondition::loginRequired',
                                         'IDF_Precondition::accessIssues');
     public function issueCreate($request, $match)
     {
@@ -63,7 +64,7 @@ class IDF_Views_Api
         $out = array();
         if ($request->method == 'GET') {
             // We give the details of the form
-            $out['doc'] = 'A POST request against this url will allow you to create a new issue.';
+            $out['help'] = 'A POST request against this url will allow you to create a new issue.';
             if ($request->user->hasPerm('IDF.project-owner', $request->project)
                 or $request->user->hasPerm('IDF.project-member', $request->project)) {
                 $out['status'] = array();
@@ -75,13 +76,33 @@ class IDF_Views_Api
         } else {
             // We need to give back the results of the creation
             if (is_object($p) and 'IDF_Issue' == get_class($p)) {
-                $out['mess'] = 'success';
+                $out['message'] = 'success';
                 $out['issue'] = $p->id;
             } else {
-                $out['mess'] = 'error';
+                $out['message'] = 'error';
                 $out['errors'] = $p['form']->errors;
             }
         }
+        return new Pluf_HTTP_Response_Json($out);
+    }
+
+    /**
+     * List all the projects
+     */
+    public $projectIndex_precond = array('IDF_Precondition::apiSetUser');
+
+    public function projectIndex($request, $match)
+    {
+        $projects = IDF_Views::getProjects($request->user);
+
+        $data = array();
+        foreach ($projects as $p) {
+            $data[] = array("shortname" => $p->shortname, "name" => $p->name, "shortdesc" => $p->shortdesc, "private" => $p->private);
+        }
+
+        $out = array();
+        $out['message'] = 'success';
+        $out['projects'] = $data;
         return new Pluf_HTTP_Response_Json($out);
     }
 

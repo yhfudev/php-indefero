@@ -1,0 +1,39 @@
+<?php return array (
+  'a' => 
+  array (
+    'chunks' => 
+    array (
+      0 => 
+      array (
+        0 => 
+        array (
+          0 => '1',
+          1 => '1',
+          2 => "ls\r\n",
+        ),
+        1 => 
+        array (
+          0 => '',
+          1 => 2,
+          2 => "ls\r\n",
+        ),
+      ),
+    ),
+    'chunks_def' => 
+    array (
+      0 => 
+      array (
+        0 => 
+        array (
+          0 => '1',
+          1 => 1,
+        ),
+        1 => 
+        array (
+          0 => '1',
+          1 => '2',
+        ),
+      ),
+    ),
+  ),
+);

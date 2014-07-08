@@ -1,13 +1,13 @@
 {extends "idf/issues/base.html"}
 {block titleicon}{if $form}<form class="star" method="post" action="{url 'IDF_Views_Issue::star', array($project.shortname, $issue.id)}"><input type="image" src="{if $starred}{media '/idf/img/star.png'}{else}{media '/idf/img/star-grey.png'}{/if}" name="submit" title="{if $starred}{trans 'Remove this issue from your watch list'}{else}{trans 'Add this issue to your watch list'}{/if}" /></form> {/if}{/block}
 {block body}
-<div style="float:right;">
+<div class="issue-prev-next">
 {if $previous_issue_id}
-<a href="{url 'IDF_Views_Issue::view', array($project.shortname, $previous_issue_id)}" title="{if $closed}{trans 'Click here to view the previous closed issue'}{else}{trans 'Click here to view the previous open issue'}{/if}">Previous issue</a>
+<a href="{url 'IDF_Views_Issue::view', array($project.shortname, $previous_issue_id)}" title="{if $closed}{trans 'View the previous closed issue'}{else}{trans 'View the previous open issue'}{/if}">Previous issue</a>
 {/if}
 {if $previous_issue_id and $next_issue_id} - {/if}
 {if $next_issue_id}
-<a href="{url 'IDF_Views_Issue::view', array($project.shortname, $next_issue_id)}" title="{if $closed}{trans 'Click here to view the next closed issue'}{else}{trans 'Click here to view the next open issue'}{/if}">Next issue</a>
+<a href="{url 'IDF_Views_Issue::view', array($project.shortname, $next_issue_id)}" title="{if $closed}{trans 'View the next closed issue'}{else}{trans 'View the next open issue'}{/if}">Next issue</a>
 {/if}
 </div>
 {assign $i = 0}
@@ -17,7 +17,7 @@
 {assign $submitter_data = $c.get_submitter_data()}
 <div class="issue-comment{if $i == 0} issue-comment-first{/if}{if $i == ($nc-1)} issue-comment-last{/if}" id="ic{$c.id}">
 {if $submitter_data.avatar != ''}
-<img style="float:right; position: relative; max-height: 60px; max-width: 60px;" src="{media}/upload/avatars/{$submitter_data.avatar}" alt=" " />
+<img style="float:right; position: relative; max-height: 60px; max-width: 60px;" src="{upload}/avatars/{$submitter_data.avatar}" alt=" " />
 {else}
 <img style="float:right; position: relative; max-height: 60px; max-width: 60px;" src="http://www.gravatar.com/avatar/{$submitter.email|md5}.jpg?s=60&amp;d={media}/idf/img/spacer.gif" alt=" " />
 {/if}
@@ -40,7 +40,16 @@
 {if $i> 0 and $c.changedIssue()}
 <div class="issue-changes">
 {foreach $c.changes as $w => $v}
-<strong>{if $w == 'su'}{trans 'Summary:'}{/if}{if $w == 'st'}{trans 'Status:'}{/if}{if $w == 'ow'}{trans 'Owner:'}{/if}{if $w == 'lb'}{trans 'Labels:'}{/if}</strong> {if $w == 'lb'}{assign $l = implode(', ', $v)}{$l}{else}{$v}{/if}<br />
+<strong>{if $w == 'su'}{trans 'Summary:'}{/if}{if $w == 'st'}{trans 'Status:'}{/if}{if $w == 'ow'}{trans 'Owner:'}{/if}{if $w == 'lb'}{trans 'Labels:'}{/if}{if $w == 'rel'}{trans 'Relations:'}{/if}</strong>
+{if $w == 'lb' or $w == 'rel'}
+  {foreach $v as $t => $ls}
+    {foreach $ls as $l}
+      {if $t == 'rem'}<s>{/if}{$l}{if $t == 'rem'}</s>{/if}
+    {/foreach}
+  {/foreach}
+{else}
+  {$v}
+{/if}<br />
 {/foreach}
 </div>
 {/if}
@@ -120,6 +129,23 @@
 </td>
 </tr>
 <tr>
+<th>{$form.f.relation_type0.labelTag}:</th>
+<td>
+{assign $prevField}
+{foreach $form as $field}
+   {if strpos($field.name, 'relation_type') === 0}
+        {$field|unsafe}
+        {assign $prevField = $field}
+   {/if}
+   {if strpos($field.name, 'relation_issue') === 0}
+        {$field|unsafe}<br />
+        {if $prevField.errors}{$prevField.fieldErrors}{/if}
+        {if $field.errors}{$field.fieldErrors}{/if}
+   {/if}
+{/foreach}
+</td>
+</tr>
+<tr>
 <th>{$form.f.label1.labelTag}:</th>
 <td>
 {if $form.f.label1.errors}{$form.f.label1.fieldErrors}{/if}{$form.f.label1|unsafe}
@@ -161,6 +187,22 @@
 <span class="label"><a href="{$url}" class="label"><strong>{$tag.class}:</strong>{$tag.name}</a></span><br />
 {/foreach}
 </p>{/if}
+{if count($related_issues) > 0}
+{foreach $related_issues as $verb => $rel_issues}
+<p>
+{assign $verb = __($verb)}
+<strong>{blocktrans}This issue {$verb}{/blocktrans}</strong><br />
+  {foreach $rel_issues as $rel_issue}
+     <span class="label">
+        <a href="{url 'IDF_Views_Issue::view', array($project.shortname, $rel_issue.other_issue)}"
+           class="label" title="{$rel_issue.other_summary}">
+           <strong>{$rel_issue.other_issue}</strong> - {$rel_issue.other_summary|shorten:30}
+        </a>
+     </span><br />
+  {/foreach}
+</p>
+{/foreach}
+{/if}
 </div>
 {/block}
 {block javascript}{if $form}{include 'idf/issues/js-autocomplete.html'}

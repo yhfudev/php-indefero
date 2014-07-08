@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ class IDF_Project extends Pluf_Model
                                   'blank' => false,
                                   'size' => 50,
                                   'verbose' => __('short name'),
-                                  'help_text' => __('Used in the url to access the project, must be short with only letters and numbers.'),
+                                  'help_text' => __('Used in the URL to access the project, must be short with only letters and numbers.'),
                                   'unique' => true,
                                   ),
                             'shortdesc' =>
@@ -84,7 +84,14 @@ class IDF_Project extends Pluf_Model
                                   'blank' => false,
                                   'size' => 250,
                                   'verbose' => __('description'),
-                                  'help_text' => __('The description can be extended using the markdown syntax.'),
+                                  'help_text' => __('The description can be extended using the Markdown syntax.'),
+                                  ),
+                            'tags' =>
+                            array(
+                                  'type' => 'Pluf_DB_Field_Manytomany',
+                                  'blank' => true,
+                                  'model' => 'IDF_Tag',
+                                  'verbose' => __('labels'),
                                   ),
                             'private' =>
                             array(
@@ -93,7 +100,30 @@ class IDF_Project extends Pluf_Model
                                   'verbose' => __('private'),
                                   'default' => 0,
                                   ),
-                                  );
+                            'current_activity' =>
+                            array(
+                                  'type' => 'Pluf_DB_Field_Foreignkey',
+                                  'model' => 'IDF_ProjectActivity',
+                                  'blank' => true,
+                                  'is_null' => true,
+                                  'default' => null,
+                                  'verbose' => __('current project activity'),
+                                  ),
+                            );
+        $activityTable = $this->_con->pfx.'idf_projectactivities';
+        $tagTable = $this->_con->pfx.'idf_project_idf_tag_assoc';
+        $this->_a['views'] = array(
+            'join_activities_and_tags' =>
+                array(
+                    'join' => 'LEFT JOIN '.$activityTable.' ON current_activity='.$activityTable.'.id '
+                             .'LEFT JOIN '.$tagTable.' ON idf_project_id='.$this->getSqlTable().'.id',
+                    'select' => 'DISTINCT '.$this->getSelect().', date, value',
+                    'props' => array(
+                        'date' => 'current_activity_date',
+                        'value' => 'current_activity_value'
+                    ),
+                ),
+        );
     }
 
 
@@ -140,7 +170,48 @@ class IDF_Project extends Pluf_Model
      * @param IDF_Tag Subfilter with a label (null)
      * @return int Count
      */
-    public function getIssueCountByStatus($status='open', $label=null)
+    public function getIssueCountByOwner($status='open')
+    {
+        switch ($status) {
+        case 'open':
+            $tags = implode(',', $this->getTagIdsByStatus('open'));
+            break;
+        case 'closed':
+        default:
+            $tags = implode(',', $this->getTagIdsByStatus('closed'));
+            break;
+        }
+        $sqlIssueTable = Pluf::factory('IDF_Issue')->getSqlTable();
+        $query = "SELECT uid AS id,COUNT(uid) AS nb
+FROM (
+    SELECT COALESCE(owner, -1) AS uid
+    FROM $sqlIssueTable
+    WHERE status IN ($tags)
+    ) AS ff
+GROUP BY uid";
+
+        $db = Pluf::db();
+        $dbData = $db->select($query);
+        $ownerStatistics = array();
+        foreach ($dbData as $k => $v) {
+            $key = ($v['id'] === '-1') ? null : $v['id'];
+            $ownerStatistics[$key] = (int)$v['nb'];
+        }
+
+        arsort($ownerStatistics);
+
+        return $ownerStatistics;
+    }
+
+    /**
+     * Returns the number of open/closed issues.
+     *
+     * @param string Status ('open'), 'closed'
+     * @param IDF_Tag Subfilter with a label (null)
+     * @param array Restrict further to a list of ids
+     * @return int Count
+     */
+    public function getIssueCountByStatus($status='open', $label=null, $ids=array())
     {
         switch ($status) {
         case 'open':
@@ -163,10 +234,46 @@ class IDF_Project extends Pluf_Model
             $sql2 = new Pluf_SQL('idf_tag_id=%s', array($label->id));
             $sql->SAnd($sql2);
         }
+        if (count($ids) > 0) {
+            $sql2 = new Pluf_SQL(sprintf('id IN (%s)', implode(', ', $ids)));
+            $sql->SAnd($sql2);
+        }
         $params = array('filter' => $sql->gen());
         if (!is_null($label)) { $params['view'] = 'join_tags'; }
         $gissue = new IDF_Issue();
         return $gissue->getCount($params);
+    }
+
+    /**
+     * Get the tags for a specific list of issues.
+     *
+     * @param string Status ('open') or 'closed'
+     * @param array A list of issue ids
+     * @return array An array of tag objects
+     */
+    public function getTagsByIssues($issue_ids=array())
+    {
+        // make the below query always a valid one
+        if (count($issue_ids) == 0) $issue_ids[] = 0;
+
+        $assocTable = $this->_con->pfx.'idf_issue_idf_tag_assoc';
+        $query = sprintf(
+            'SELECT DISTINCT idf_tag_id FROM %s '.
+            'WHERE idf_issue_id IN (%s) '.
+            'GROUP BY idf_tag_id',
+            $assocTable, implode(',', $issue_ids)
+        );
+
+        $db = Pluf::db();
+        $dbData = $db->select($query);
+        $ids = array(0);
+        foreach ($dbData as $data) {
+            $ids[] = $data['idf_tag_id'];
+        }
+
+        $sql = new Pluf_SQL(sprintf('id IN (%s)', implode(', ', $ids)));
+        $model = new IDF_Tag();
+        return $model->getList(array('filter' => $sql->gen()));
     }
 
     /**
@@ -231,6 +338,29 @@ class IDF_Project extends Pluf_Model
             $tags[] = IDF_Tag::add($name, $this, $class);
         }
         return $tags;
+    }
+
+    /**
+     * Returns a list of relations which are available in this project as
+     * associative array. Each key-value pair marks a set of orthogonal
+     * relations. To ease processing, each of these pairs is included twice
+     * in the array, once as key1 => key2 and once as key2 => key1.
+     *
+     * @return array List of relation names
+     */
+    public function getRelationsFromConfig()
+    {
+        $conf = $this->getConf();
+        $rel = $conf->getVal('issue_relations', IDF_Form_IssueTrackingConf::init_relations);
+        $relations = array();
+        foreach (preg_split("/\015\012|\015|\012/", $rel, -1, PREG_SPLIT_NO_EMPTY) as $s) {
+            $verbs = preg_split("/\s*,\s*/", $s, 2);
+            if (count($verbs) == 1)
+                $relations += array($verbs[0] => $verbs[0]);
+            else
+                $relations += array($verbs[0] => $verbs[1], $verbs[1] => $verbs[0]);
+        }
+        return $relations;
     }
 
     /**
@@ -327,13 +457,13 @@ class IDF_Project extends Pluf_Model
             $dep_ids = IDF_Views_Wiki::getDeprecatedPagesIds($this);
             $extra = '';
             if (count($dep_ids)) {
-                $extra = ' AND idf_wikipage_id NOT IN ('.implode(', ', $dep_ids).') ';
+                $extra = ' AND idf_wiki_page_id NOT IN ('.implode(', ', $dep_ids).') ';
             }
-            $what_t = Pluf::factory('IDF_WikiPage')->getSqlTable();
-            $asso_t = $this->_con->pfx.'idf_tag_idf_wikipage_assoc';
+            $what_t = Pluf::factory('IDF_Wiki_Page')->getSqlTable();
+            $asso_t = $this->_con->pfx.'idf_tag_idf_wiki_page_assoc';
             $sql = 'SELECT '.$tag_t.'.id AS id, COUNT(*) AS nb_use FROM '.$tag_t.' '."\n".
                 'LEFT JOIN '.$asso_t.' ON idf_tag_id='.$tag_t.'.id '."\n".
-                'LEFT JOIN '.$what_t.' ON idf_wikipage_id='.$what_t.'.id '."\n".
+                'LEFT JOIN '.$what_t.' ON idf_wiki_page_id='.$what_t.'.id '."\n".
                 'WHERE idf_tag_id IS NOT NULL '.$extra.' AND '.$what_t.'.project='.$this->id.' GROUP BY '.$tag_t.'.id, '.$tag_t.'.class, '.$tag_t.'.name ORDER BY '.$tag_t.'.class ASC, '.$tag_t.'.name ASC';
         } elseif ($what == 'downloads') {
             $dep_ids = IDF_Views_Download::getDeprecatedFilesIds($this);
@@ -352,7 +482,11 @@ class IDF_Project extends Pluf_Model
         foreach ($this->_con->select($sql) as $idc) {
             $tag = new IDF_Tag($idc['id']);
             $tag->nb_use = $idc['nb_use'];
-            $tags[] = $tag;
+            // group by class
+            if (!array_key_exists($tag->class, $tags)) {
+                $tags[$tag->class] = array();
+            }
+            $tags[$tag->class][] = $tag;
         }
         return new Pluf_Template_ContextVars($tags);
     }
@@ -431,12 +565,12 @@ class IDF_Project extends Pluf_Model
     }
 
     /**
-     * Get the post commit hook key.
+     * Get the web hook key.
      *
      * The goal is to get something predictable but from which one
      * cannot reverse find the secret key.
      */
-    public function getPostCommitHookKey()
+    public function getWebHookKey()
     {
         return md5($this->id.sha1(Pluf::f('secret_key')).$this->shortname);
     }
@@ -490,6 +624,22 @@ class IDF_Project extends Pluf_Model
     }
 
     /**
+     * Magic overload that falls back to the values of the internal configuration
+     * if no getter / caller matched
+     *
+     * @param string $key
+     */
+    public function __get($key)
+    {
+        try {
+            return parent::__get($key);
+        }
+        catch (Exception $e) {
+            return $this->getConf()->getVal($key);
+        }
+    }
+
+    /**
      * Get simple statistics about the project.
      *
      * This returns an associative array with number of tickets,
@@ -502,10 +652,10 @@ class IDF_Project extends Pluf_Model
         $stats = array();
         $stats['total'] = 0;
         $what = array('downloads' => 'IDF_Upload',
-                      'reviews' => 'IDF_Review',
-                      'issues' => 'IDF_Issue',
-                      'docpages' => 'IDF_WikiPage',
-                      'commits' => 'IDF_Commit',
+                      'reviews'   => 'IDF_Review',
+                      'issues'    => 'IDF_Issue',
+                      'docpages'  => 'IDF_Wiki_Page',
+                      'commits'   => 'IDF_Commit',
                       );
         foreach ($what as $key=>$m) {
             $i = Pluf::factory($m)->getCount(array('filter' => 'project='.(int)$this->id));
@@ -635,7 +785,8 @@ class IDF_Project extends Pluf_Model
         Pluf_Signal::send('IDF_Project::preDelete',
                           'IDF_Project', $params);
         $what = array('IDF_Upload', 'IDF_Review', 'IDF_Issue',
-                      'IDF_WikiPage', 'IDF_Commit', 'IDF_Tag',
+                      'IDF_Wiki_Page', 'IDF_Wiki_Resource',
+                      'IDF_Commit', 'IDF_Tag',
                       );
         foreach ($what as $m) {
             foreach (Pluf::factory($m)->getList(array('filter' => 'project='.(int)$this->id)) as $item) {
@@ -675,5 +826,53 @@ class IDF_Project extends Pluf_Model
         }
         $this->_isRestricted = false;
         return false;
+    }
+
+    /**
+     * Returns an associative array of email addresses to notify about changes
+     * in a certain tab like 'issues', 'source', and so on.
+     *
+     * @param string $tab
+     * @return array Key is the email address, value is the preferred language setting
+     */
+    public function getNotificationRecipientsForTab($tab)
+    {
+        if (!in_array($tab, array('source', 'issues', 'downloads', 'wiki', 'review'))) {
+            throw new Exception(sprintf('unknown tab %s', $tab));
+        }
+
+        $conf = $this->getConf();
+        $recipients = array();
+        $membership_data = $this->getMembershipData();
+
+        if ($conf->getVal($tab.'_notification_owners_enabled', false)) {
+            foreach ($membership_data['owners'] as $owner) {
+                $recipients[$owner->email] = $owner->language;
+            }
+        }
+
+        if ($conf->getVal($tab.'_notification_members_enabled', false)) {
+            foreach ($membership_data['members'] as $member) {
+                $recipients[$member->email] = $member->language;
+            }
+        }
+
+        if ($conf->getVal($tab.'_notification_email_enabled', false)) {
+            $addresses = preg_split('/\s*,\s*/',
+                                $conf->getVal($tab.'_notification_email', ''),
+                                -1, PREG_SPLIT_NO_EMPTY);
+
+            // we use a default language setting for this plain list of
+            // addresses, but we ensure that we do not overwrite an existing
+            // address which might come with a proper setting already
+            $languages = Pluf::f('languages', array('en'));
+            foreach ($addresses as $address) {
+                if (array_key_exists($address, $recipients))
+                    continue;
+                $recipients[$address] = $languages[0];
+            }
+        }
+
+        return $recipients;
     }
 }

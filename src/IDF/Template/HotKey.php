@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,6 @@ class IDF_Template_HotKey extends Pluf_Template_Tag
     function start($key, $view, $params=array(), $get_params=array())
     {
         $url = addslashes(Pluf_HTTP_URL_urlForView($view, $params, $get_params));
-        echo "jQuery.hotkeys.add('$key',{disableInInput: true},function (){window.location.href='$url';});";
+        echo "$(document).bind('keydown','$key',function (){window.location.href='$url';});";
     }
 }

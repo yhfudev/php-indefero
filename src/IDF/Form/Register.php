@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ class IDF_Form_Register extends Pluf_Form
                                             'max_length' => 15,
                                             'min_length' => 3,
                                             'initial' => $login,
-                                            'help_text' => __('The login must be between 3 and 15 characters long and contains only letters and digits.'),
+                                            'help_text' => __('The login must be between 3 and 15 characters long and contain only letters and digits.'),
                                             'widget_attrs' => array(
                                                        'maxlength' => 15,
                                                        'size' => 10,
@@ -52,7 +52,7 @@ class IDF_Form_Register extends Pluf_Form
                                       array('required' => true,
                                             'label' => __('Your email'),
                                             'initial' => '',
-                                            'help_text' => __('We will never send you any unsolicited emails. We hate spams too!'),
+                                            'help_text' => __('We will never send you any unsolicited emails. We hate spam too!'),
                                             ));
 
         $this->fields['terms'] = new Pluf_Form_Field_Boolean(
@@ -93,10 +93,8 @@ class IDF_Form_Register extends Pluf_Form
     function clean_email()
     {
         $this->cleaned_data['email'] = mb_strtolower(trim($this->cleaned_data['email']));
-        $guser = new Pluf_User();
-        $sql = new Pluf_SQL('email=%s', $this->cleaned_data['email']);
-        if ($guser->getCount(array('filter' => $sql->gen())) > 0) {
-            throw new Pluf_Form_Invalid(sprintf(__('The email "%s" is already used. If you need, click on the help link to recover your password.'), $this->cleaned_data['email']));
+        if (Pluf::factory('IDF_EmailAddress')->get_user_for_email_address($this->cleaned_data['email']) != null) {
+            throw new Pluf_Form_Invalid(sprintf(__('The email "%1$s" is already used. If you need to, you can <a href="%2$s">recover your password</a>.'), $this->cleaned_data['email'], Pluf_HTTP_URL_urlForView('IDF_Views::passwordRecoveryAsk')));
         }
         return $this->cleaned_data['email'];
     }

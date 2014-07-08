@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2010 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,19 +29,19 @@
 class IDF_Scm_Monotone extends IDF_Scm
 {
     /** the minimum supported interface version */
-    public static $MIN_INTERFACE_VERSION = 12.0;
-
-    private $stdio;
+    public static $MIN_INTERFACE_VERSION = 13.0;
 
     private static $instances = array();
 
+    private $stdio;
+
     /**
-     * @see IDF_Scm::__construct()
+     * Constructor
      */
-    public function __construct($project)
+    public function __construct(IDF_Project $project, IDF_Scm_Monotone_IStdio $stdio)
     {
         $this->project = $project;
-        $this->stdio = new IDF_Scm_Monotone_Stdio($project);
+        $this->stdio = $stdio;
     }
 
     /**
@@ -135,13 +135,13 @@ class IDF_Scm_Monotone extends IDF_Scm
     /**
      * @see IDF_Scm::getArchiveStream
      */
-    public function getArchiveStream($commit, $prefix='repository/')
+    public function getArchiveStream($commit, $prefix = null)
     {
         $revs = $this->_resolveSelector($commit);
         // sanity: this should actually not happen, because the
         // revision is validated before already
         if (count($revs) == 0) {
-            return new Pluf_HTTP_Response_NotFound();
+            throw new IDF_Scm_Exception("$commit is not a valid revision");
         }
         return new IDF_Scm_Monotone_ZipRender($this->stdio, $revs[0]);
     }
@@ -400,14 +400,12 @@ class IDF_Scm_Monotone extends IDF_Scm
         if (!preg_match('/([^ ]+@[^ ]+)/', $author, $match)) {
             return null;
         }
-        foreach (array('email', 'login') as $what) {
-            $sql = new Pluf_SQL($what.'=%s', array($match[1]));
-            $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
-            if ($users->count() > 0) {
-                return $users[0];
-            }
+        $sql = new Pluf_SQL('login=%s', array($match[1]));
+        $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
+        if ($users->count() > 0) {
+            return $users[0];
         }
-        return null;
+        return Pluf::factory('IDF_EmailAddress')->get_user_for_email_address($match[1]);
     }
 
     /**
@@ -460,8 +458,9 @@ class IDF_Scm_Monotone extends IDF_Scm
     public static function factory($project)
     {
         if (!array_key_exists($project->shortname, self::$instances)) {
+            $stdio = new IDF_Scm_Monotone_Stdio($project);
             self::$instances[$project->shortname] =
-                new IDF_Scm_Monotone($project);
+                new IDF_Scm_Monotone($project, $stdio);
         }
         return self::$instances[$project->shortname];
     }
@@ -537,9 +536,6 @@ class IDF_Scm_Monotone extends IDF_Scm
         $stanzas = IDF_Scm_Monotone_BasicIO::parse($out);
 
         foreach ($stanzas as $stanza) {
-            if ($stanza[0]['key'] == 'format_version')
-                continue;
-
             if ($stanza[0]['values'][0] != $file)
                 continue;
 
@@ -603,7 +599,7 @@ class IDF_Scm_Monotone extends IDF_Scm
     {
         $revs = $this->_resolveSelector($commit);
         if (count($revs) == 0)
-            return null;
+            return false;
 
         $revision = $revs[0];
         $out = $this->stdio->exec(array('get_revision', $revision));
@@ -613,6 +609,7 @@ class IDF_Scm_Monotone extends IDF_Scm
             'additions'  => array(),
             'deletions'  => array(),
             'renames'    => array(),
+            'copies'     => array(),
             'patches'    => array(),
             'properties' => array(),
         );
@@ -672,14 +669,15 @@ class IDF_Scm_Monotone extends IDF_Scm
     {
         $revs = $this->_resolveSelector($commit);
         if (count($revs) == 0)
-            return array();
+            return false;
 
         $res = array();
 
         $parents = $this->stdio->exec(array('parents', $revs[0]));
         $res['parents'] = preg_split("/\n/", $parents, -1, PREG_SPLIT_NO_EMPTY);
-        
-        $certs = $this->_getCerts($revs[0]);        
+
+        $certs = $this->_getCerts($revs[0]);
+
         // FIXME: this assumes that author, date and changelog are always given
         $res['author'] = implode(', ', $certs['author']);
 
@@ -699,6 +697,29 @@ class IDF_Scm_Monotone extends IDF_Scm
         $res['diff'] = ($getdiff) ? $this->_getDiff($revs[0]) : '';
 
         return (object) $res;
+    }
+
+    /**
+     * @see IDF_Scm::getProperties()
+     */
+    public function getProperties($rev, $path='')
+    {
+        $out = $this->stdio->exec(array('interface_version'));
+        // support for querying file attributes of committed revisions
+        // was added for mtn 1.1 (interface version 13.1)
+        if (floatval($out) < 13.1)
+            return array();
+
+        $out = $this->stdio->exec(array('get_attributes', $path), array('r' => $rev));
+        $stanzas = IDF_Scm_Monotone_BasicIO::parse($out);
+        $res = array();
+
+        foreach ($stanzas as $stanza) {
+            $line = $stanza[0];
+            $res[$line['values'][0]] = $line['values'][1];
+        }
+
+        return $res;
     }
 
     /**

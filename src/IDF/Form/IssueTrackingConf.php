@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,6 +72,23 @@ Performance          = Performance issue
 Usability            = Affects program usability
 Maintainability      = Hinders future changes';
     const init_one_max = 'Type, Priority, Milestone';
+    // ATTENTION: if you change something here, change the values below as well!
+    const init_relations = 'is related to
+blocks, is blocked by
+duplicates, is duplicated by';
+
+    // These are actually all noop's, but we have no other chance to
+    // tell IDF's translation mechanism to mark the strings as translatable
+    // FIXME: IDF should get a internal translation system for strings like
+    // that, that can also be easily expanded by users
+    private function noop()
+    {
+        __('is related to');
+        __('blocks');
+        __('is blocked by');
+        __('duplicates');
+        __('is duplicated by');
+    }
 
     public function initFields($extra=array())
     {
@@ -113,11 +130,20 @@ Maintainability      = Hinders future changes';
 
         $this->fields['labels_issue_one_max'] = new Pluf_Form_Field_Varchar(
                                       array('required' => false,
-                                            'label' => __('Each issue may have at most one label with each of these classes'),
-                                            'initial' => self::init_one_max, 
+                                            'label' => __('Each issue may have at most one label with each of these classes.'),
+                                            'initial' => self::init_one_max,
                                             'widget_attrs' => array('size' => 60),
                                             ));
 
+        $this->fields['issue_relations'] = new Pluf_Form_Field_Varchar(
+                                      array('required' => true,
+                                            'label' => __('Issue relations'),
+                                            'initial' => self::init_relations,
+                                            'help_text' => __('You can define bidirectional relations like "is related to" or "blocks, is blocked by". For standard relations pre-configured translations exist, new relations should however be defined in a language that is understood by all project members.'),
+                                            'widget_attrs' => array('rows' => 7,
+                                                                    'cols' => 75),
+                                            'widget' => 'Pluf_Form_Widget_TextareaInput',
+                                            ));
     }
 }
 

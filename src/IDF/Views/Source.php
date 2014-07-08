@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,13 +56,18 @@ class IDF_Views_Source
     public function invalidRevision($request, $match)
     {
         $title = sprintf(__('%s Invalid Revision'), (string) $request->project);
+        $scm = IDF_Scm::get($request->project);
+        $branches = $scm->getBranches();
+
         $commit = $match[2];
         $params = array(
                         'page_title' => $title,
                         'title' => $title,
                         'commit' => $commit,
+                        'branches' => $branches,
                         );
-        return Pluf_Shortcuts_RenderToResponse('idf/source/invalid_revision.html',
+        $scmConf = $request->conf->getVal('scm', 'git');
+        return Pluf_Shortcuts_RenderToResponse('idf/source/'.$scmConf.'/invalid_revision.html',
                                                $params, $request);
     }
 
@@ -125,6 +130,12 @@ class IDF_Views_Source
                                                      'scm' => $scmConf,
                                                      ),
                                                $request);
+    }
+
+    public function repository($request, $match)
+    {
+        $scm = IDF_Scm::get($request->project);
+        return $scm->repository($request, $match);
     }
 
     public $treeBase_precond = array('IDF_Precondition::accessSource',
@@ -297,17 +308,13 @@ class IDF_Views_Source
             throw new Exception('could not retrieve commit object for '. $commit);
         }
         $title = sprintf(__('%s Commit Details'), (string) $request->project);
-        $page_title = sprintf(__('%s Commit Details - %s'), (string) $request->project, $commit);
+        $page_title = sprintf(__('%1$s Commit Details - %2$s'), (string) $request->project, $commit);
         $rcommit = IDF_Commit::getOrAdd($cobject, $request->project);
-        $diff = new IDF_Diff($cobject->diff);
+        $diff = new IDF_Diff($cobject->diff, $scm->getDiffPathStripLevel());
+        $cobject->diff = null;
         $diff->parse();
         $scmConf = $request->conf->getVal('scm', 'git');
-        try {
-            $changes = $scm->getChanges($commit);
-        } catch (Exception $e) {
-            // getChanges is not yes supported by this backend.
-            $changes = array();
-        }
+        $changes = $scm->getChanges($commit);
         $branches = $scm->getBranches();
         $in_branches = $scm->inBranches($cobject->commit, '');
         $tags = $scm->getTags();
@@ -472,7 +479,7 @@ class IDF_Views_Source
         }
 
         // compare two nodes of different types, directories ("tree")
-        // should come before files ("blob") 
+        // should come before files ("blob")
         if ($a->type > $b->type) {
             return -1;
         }
@@ -505,12 +512,12 @@ function IDF_Views_Source_PrettySizeSimple($size)
 function IDF_Views_Source_ShortenString($string, $length)
 {
     $ellipse = "...";
-    $length = max(strlen($ellipse) + 2, $length);
+    $length = max(mb_strlen($ellipse) + 2, $length);
     $preflen = ceil($length / 10);
 
     if (mb_strlen($string) < $length)
         return $string;
 
-    return substr($string, 0, $preflen).$ellipse.
-           substr($string, -($length - $preflen - mb_strlen($ellipse)));
+    return mb_substr($string, 0, $preflen).$ellipse.
+           mb_substr($string, -($length - $preflen - mb_strlen($ellipse)));
 }

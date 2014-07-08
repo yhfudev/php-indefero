@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ class IDF_Form_Password extends Pluf_Form
                 $return_url = Pluf_HTTP_URL_urlForView('IDF_Views::passwordRecoveryInputCode');
                 $tmpl = new Pluf_Template('idf/user/passrecovery-email.txt');
                 $cr = new Pluf_Crypt(md5(Pluf::f('secret_key')));
-                $code = trim($cr->encrypt($user->email.':'.$user->id.':'.time()), 
+                $code = trim($cr->encrypt($user->email.':'.$user->id.':'.time().':primary'), 
                              '~');
                 $code = substr(md5(Pluf::f('secret_key').$code), 0, 2).$code;
                 $url = Pluf::f('url_base').Pluf_HTTP_URL_urlForView('IDF_Views::passwordRecovery', array($code), array(), false);

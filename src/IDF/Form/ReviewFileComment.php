@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,8 @@ class IDF_Form_ReviewFileComment extends Pluf_Form
         if ($this->user->hasPerm('IDF.project-owner', $this->project)
             or $this->user->hasPerm('IDF.project-member', $this->project)) {
             $this->show_full = true;
+        } else {
+            $this->show_full = false;
         }
         if ($this->show_full) {
             $this->fields['summary'] = new Pluf_Form_Field_Varchar(

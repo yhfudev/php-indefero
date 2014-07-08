@@ -1,0 +1,24 @@
+Index: LinuxBIOSv1/src/include/cpu/i786/cpufixup.h
+===================================================================
+--- LinuxBIOSv1/src/include/cpu/i786/cpufixup.h	(Revision 0)
++++ LinuxBIOSv1/src/include/cpu/i786/cpufixup.h	(Revision 665)
+@@ -0,0 +1,11 @@
++#ifndef CPU_I786_CPUFIXUP_H
++#define CPU_I786_CPUFIXUP_H
++
++
++void i786_cpufixup(struct mem_range *mem);
++
++#define L3_CACHE_DISABLE 0x40
++
++#endif /* CPU_I786_CPUFIXUP_H */
++
++
+
+Eigenschafts�nderungen: LinuxBIOSv1\src\include\cpu\i786\cpufixup.h
+___________________________________________________________________
+Hinzugef�gt: svn:keywords
+   + Author Date Id Revision
+Hinzugef�gt: svn:eol-style
+   + native
+

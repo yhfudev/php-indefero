@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@
 # ***** END LICENSE BLOCK ***** */
 
 $m = array();
-$m['IDF_Tag'] = array('relate_to' => array('IDF_Project'));
+$m['IDF_ProjectActivity'] = array('relate_to' => array('IDF_Project'));
+$m['IDF_Tag'] = array('relate_to' => array('IDF_Project'),
+                      'relate_to_many' => array('IDF_Project'));
 $m['IDF_Issue'] = array('relate_to' => array('IDF_Project', 'Pluf_User', 'IDF_Tag'),
                         'relate_to_many' => array('IDF_Tag', 'Pluf_User'));
 $m['IDF_IssueComment'] = array('relate_to' => array('IDF_Issue', 'Pluf_User'));
@@ -30,9 +32,12 @@ $m['IDF_IssueFile'] = array('relate_to' => array('IDF_IssueComment', 'Pluf_User'
 $m['IDF_Upload'] = array('relate_to' => array('IDF_Project', 'Pluf_User'),
                          'relate_to_many' => array('IDF_Tag'));
 $m['IDF_Search_Occ'] = array('relate_to' => array('IDF_Project'),);
-$m['IDF_WikiPage'] = array('relate_to' => array('IDF_Project', 'Pluf_User'),
-                           'relate_to_many' => array('IDF_Tag', 'Pluf_User'));
-$m['IDF_WikiRevision'] = array('relate_to' => array('IDF_WikiPage', 'Pluf_User'));
+$m['IDF_Wiki_Page'] = array('relate_to' => array('IDF_Project', 'Pluf_User'),
+                            'relate_to_many' => array('IDF_Tag', 'Pluf_User'));
+$m['IDF_Wiki_PageRevision'] = array('relate_to' => array('IDF_Wiki_Page', 'Pluf_User'));
+$m['IDF_Wiki_Resource'] = array('relate_to' => array('IDF_Project', 'Pluf_User'));
+$m['IDF_Wiki_ResourceRevision'] = array('relate_to' => array('IDF_Wiki_Resource', 'Pluf_User'),
+                                        'relate_to_many' => array('IDF_PageRevision', 'Pluf_User'));
 $m['IDF_Review'] = array('relate_to' => array('IDF_Project', 'Pluf_User', 'IDF_Tag'),
                         'relate_to_many' => array('IDF_Tag', 'Pluf_User'));
 $m['IDF_Review_Patch'] = array('relate_to' => array('IDF_Review', 'Pluf_User'));
@@ -44,6 +49,8 @@ $m['IDF_Commit'] = array('relate_to' => array('IDF_Project', 'Pluf_User'));
 $m['IDF_Scm_Cache_Git'] = array('relate_to' => array('IDF_Project'));
 
 $m['IDF_UserData'] = array('relate_to' => array('Pluf_User'));
+$m['IDF_EmailAddress'] = array('relate_to' => array('Pluf_User'));
+$m['IDF_IssueRelation'] = array('relate_to' => array('IDF_Issue', 'Pluf_User'));
 
 Pluf_Signal::connect('Pluf_Template_Compiler::construct_template_tags_modifiers',
                      array('IDF_Middleware', 'updateTemplateTagsModifiers'));

@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,6 +39,64 @@ class IDF_Scm_Git extends IDF_Scm
     {
         $this->repo = $repo;
         $this->project = $project;
+    }
+
+    /**
+     * @see IDF_Scm::getChanges()
+     *
+     * Git command output is like :
+     * M       doc/Guide utilisateur/Manuel_distrib.tex
+     * M       doc/Guide utilisateur/Manuel_intro.tex
+     * M       doc/Guide utilisateur/Manuel_libpegase_exemples.tex
+     * M       doc/Guide utilisateur/Manuel_page1_version.tex
+     * A       doc/Guide utilisateur/images/ftp-nautilus.png
+     * M       doc/Guide utilisateur/textes/log_boot_PEGASE.txt
+     *
+     * Status letters mean : Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R)
+     */
+    public function getChanges($commit)
+    {
+        $cmd = sprintf('GIT_DIR=%s '.Pluf::f('git_path', 'git').' show %s --name-status --pretty="format:" --diff-filter="[A|C|D|M|R]" -C -C',
+                   escapeshellarg($this->repo),
+                   escapeshellarg($commit));
+        $out = array();
+        $cmd = Pluf::f('idf_exec_cmd_prefix', '').$cmd;
+        self::exec('IDF_Scm_Git::getChanges', $cmd, $out);
+
+        $return = (object) array(
+            'additions'  => array(),
+            'deletions'  => array(),
+            'renames'    => array(),
+            'copies'     => array(),
+            'patches'    => array(),
+            'properties' => array(),
+        );
+
+        foreach ($out as $line) {
+            $line = trim($line);
+            if ($line != '') {
+                $action = $line[0];
+
+                if ($action == 'A') {
+                    $filename = trim(substr($line, 1));
+                    $return->additions[] = $filename;
+                } else if ($action == 'D') {
+                    $filename = trim(substr($line, 1));
+                    $return->deletions[] = $filename;
+                } else if ($action == 'M') {
+                    $filename = trim(substr($line, 1));
+                    $return->patches[] = $filename;
+                } else if ($action == 'R') {
+                    $matches = preg_split("/\t/", $line);
+                    $return->renames[$matches[1]] = $matches[2];
+                } else if ($action == 'C') {
+                    $matches = preg_split("/\t/", $line);
+                    $return->copies[$matches[1]] = $matches[2];
+                }
+            }
+        }
+
+        return $return;
     }
 
     public function getRepositorySize()
@@ -113,7 +171,29 @@ class IDF_Scm_Git extends IDF_Scm
      */
     public function inBranches($commit, $path)
     {
-        return $this->_inObject($commit, 'branch');
+        if (isset($this->cache['inBranches'][$commit])) {
+            return $this->cache['inBranches'][$commit];
+        }
+
+        $cmd = Pluf::f('idf_exec_cmd_prefix', '')
+            .sprintf('GIT_DIR=%s %s branch --contains %s',
+                     escapeshellarg($this->repo),
+                     Pluf::f('git_path', 'git'),
+                     escapeshellarg($commit));
+        self::exec('IDF_Scm_Git::inBranches', $cmd, $out, $return);
+        if (0 != $return) {
+            throw new IDF_Scm_Exception(sprintf($this->error_tpl,
+                                                $cmd, $return,
+                                                implode("\n", $out)));
+        }
+
+        $res = array();
+        foreach ($out as $line) {
+            $res[] = substr($line, 2);
+        }
+
+        $this->cache['inBranches'][$commit] = $res;
+        return $res;
     }
 
     /**
@@ -133,7 +213,7 @@ class IDF_Scm_Git extends IDF_Scm
             return $this->cache['tags'];
         }
         $cmd = Pluf::f('idf_exec_cmd_prefix', '')
-            .sprintf('GIT_DIR=%s %s for-each-ref --format="%%(taggerdate:iso)%%(committerdate:iso) %%(objectname) %%(refname)" refs/tags',
+            .sprintf('GIT_DIR=%s %s for-each-ref --format="%%(objectname) %%(refname)" refs/tags',
                      escapeshellarg($this->repo),
                      Pluf::f('git_path', 'git'));
         self::exec('IDF_Scm_Git::getTags', $cmd, $out, $return);
@@ -142,18 +222,15 @@ class IDF_Scm_Git extends IDF_Scm
                                                 $cmd, $return,
                                                 implode("\n", $out)));
         }
-        rsort($out);
         $res = array();
         foreach ($out as $b) {
-            $elts = explode(' ', $b, 5);
-            $tag = substr(trim($elts[4]), 10);
-            if (false !== strpos($tag, '/')) {
-                $res[$elts[3]] = $b;
-            } else {
-                $res[$tag] = '';
-            }
+            $elts = explode(' ', $b, 2);
+            $tag = substr(trim($elts[1]), 10);  // Remove refs/tags/ prefix
+            $res[$tag] = '';
         }
+        krsort($res);
         $this->cache['tags'] = $res;
+
         return $res;
     }
 
@@ -162,35 +239,36 @@ class IDF_Scm_Git extends IDF_Scm
      **/
     public function inTags($commit, $path)
     {
-        return $this->_inObject($commit, 'tag');
-    }
+        if (isset($this->cache['inTags'][$commit])) {
+            return $this->cache['inTags'][$commit];
+        }
 
-    /**
-     * Returns in which branches or tags a commit is.
-     *
-     * @param string Commit
-     * @param string Object's type: 'branch' or 'tag'.
-     * @return array
-     */
-    private function _inObject($commit, $object)
-    {
-        $object = strtolower($object);
-        if ('branch' === $object) {
-            $objects = $this->getBranches();
-        } else if ('tag' === $object) {
-            $objects = $this->getTags();
-        } else {
-            throw new InvalidArgumentException(sprintf(__('Invalid value for the parameter %1$s: %2$s. Use %3$s.'),
-                                                       '$object',
-                                                       $object,
-                                                       '\'branch\' or \'tag\''));
+        $cmd = Pluf::f('idf_exec_cmd_prefix', '')
+            .sprintf('GIT_DIR=%s %s tag --contains %s',
+                     escapeshellarg($this->repo),
+                     Pluf::f('git_path', 'git'),
+                     escapeshellarg($commit));
+        self::exec('IDF_Scm_Git::inTags', $cmd, $out, $return);
+        // `git tag` gained the `--contains` option in 1.6.2, earlier
+        // versions report a bad usage error (129) which we ignore here
+        if (129 == $return) {
+            $this->cache['inTags'][$commit] = array();
+            return array();
         }
-        unset($object);
-        $result = array();
-        if (array_key_exists($commit, $objects)) {
-            $result[] = $commit;
+        // any other error should of course get noted
+        if (0 != $return) {
+            throw new IDF_Scm_Exception(sprintf($this->error_tpl,
+                                                $cmd, $return,
+                                                implode("\n", $out)));
         }
-        return $result;
+
+        $res = array();
+        foreach ($out as $line) {
+            $res[] = $line;
+        }
+
+        $this->cache['inTags'][$commit] = $res;
+        return $res;
     }
 
     /**
@@ -271,14 +349,20 @@ class IDF_Scm_Git extends IDF_Scm
         if (!preg_match('/<(.*)>/', $author, $match)) {
             return null;
         }
-        foreach (array('email', 'login') as $what) {
-            $sql = new Pluf_SQL($what.'=%s', array($match[1]));
-            $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
-            if ($users->count() > 0) {
-                return $users[0];
-            }
+        // FIXME: newer git versions know a i18n.commitencoding setting which
+        // leads to another header, "encoding", with which we _could_ try to
+        // decode the string into utf8. Unfortunately this does not always
+        // work, especially not in older repos, so we would then still have
+        // to supply some fallback.
+        if (!mb_check_encoding($match[1], 'UTF-8')) {
+            return null;
         }
-        return null;
+        $sql = new Pluf_SQL('login=%s', array($match[1]));
+        $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
+        if ($users->count() > 0) {
+            return $users[0];
+        }
+        return Pluf::factory('IDF_EmailAddress')->get_user_for_email_address($match[1]);
     }
 
     public static function getAnonymousAccessUrl($project, $commit=null)
@@ -294,8 +378,8 @@ class IDF_Scm_Git extends IDF_Scm
             $keys = $user->get_idf_key_list();
             if (count ($keys) == 0)
                 return self::getAnonymousAccessUrl($project);
-        } 
-        
+        }
+
         return sprintf(Pluf::f('git_write_remote_url'), $project->shortname);
     }
 
@@ -426,34 +510,28 @@ class IDF_Scm_Git extends IDF_Scm
                            "'".$this->mediumtree_fmt."'",
                            escapeshellarg($commit));
         }
-        $out = array();
         $cmd = Pluf::f('idf_exec_cmd_prefix', '').$cmd;
-        self::exec('IDF_Scm_Git::getCommit', $cmd, $out, $ret);
-        if ($ret != 0 or count($out) == 0) {
+        $out = self::shell_exec('IDF_Scm_Git::getCommit', $cmd);
+        if (strlen($out) == 0) {
             return false;
         }
-        if ($getdiff) {
-            $log = array();
-            $change = array();
-            $inchange = false;
-            foreach ($out as $line) {
-                if (!$inchange and 0 === strpos($line, 'diff --git a')) {
-                    $inchange = true;
-                }
-                if ($inchange) {
-                    $change[] = $line;
-                } else {
-                    $log[] = $line;
-                }
-            }
-            $out = self::parseLog($log);
-            $out[0]->diff = implode("\n", $change);
-        } else {
-            $out = self::parseLog($out);
-            $out[0]->diff = '';
+
+        $diffStart = false;
+        if (preg_match('/^diff (?:--git a|--cc)/m', $out, $m, PREG_OFFSET_CAPTURE)) {
+            $diffStart = $m[0][1];
         }
 
-        $out[0]->branch = implode(', ', $this->inBranches($commit, null));
+        $diff = '';
+        if ($diffStart !== false) {
+            $log = substr($out, 0, $diffStart);
+            $diff = substr($out, $diffStart);
+        } else {
+            $log = $out;
+        }
+
+        $out = self::parseLog(preg_split('/\r\n|\n/', $log));
+        $out[0]->diff = $diff;
+        $out[0]->branch = implode(', ', $this->inBranches($out[0]->commit, null));
         return $out[0];
     }
 
@@ -565,7 +643,11 @@ class IDF_Scm_Git extends IDF_Scm
         $c['full_message'] = IDF_Commit::toUTF8($c['full_message']);
         $c['title'] = IDF_Commit::toUTF8($c['title']);
         if (isset($c['parents'])) {
-            $c['parents'] = explode(' ', trim($c['parents']));
+            $c['parents'] = preg_split('/ /', trim($c['parents']), -1, PREG_SPLIT_NO_EMPTY);
+        } else {
+            // this is actually an error state because we should _always_
+            // be able to parse the parents line with every git version
+            $c['parents'] = null;
         }
         $res[] = (object) $c;
         return $res;
@@ -579,6 +661,14 @@ class IDF_Scm_Git extends IDF_Scm
                        escapeshellarg($prefix),
                        escapeshellarg($commit));
         return new Pluf_HTTP_Response_CommandPassThru($cmd, 'application/x-zip');
+    }
+
+    /**
+     * @see IDF_Scm::getDiffPathStripLevel()
+     */
+    public function getDiffPathStripLevel()
+    {
+        return 1;
     }
 
     /*
@@ -830,5 +920,83 @@ class IDF_Scm_Git extends IDF_Scm
             return true;
         }
         return false;
+    }
+
+    public function repository($request, $match)
+    {
+        // authenticate: authenticate connection through "extra" password
+        if (isset($_SERVER['HTTP_AUTHORIZATION']) && $_SERVER['HTTP_AUTHORIZATION'] != '')
+            list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':' , base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+
+        if (isset($_SERVER['PHP_AUTH_USER'])) {
+            $sql = new Pluf_SQL('login=%s', array($_SERVER['PHP_AUTH_USER']));
+            $users = Pluf::factory('Pluf_User')->getList(array('filter'=>$sql->gen()));
+            if ((count($users) == 1) && ($users[0]->active)) {
+                $user = $users[0];
+                $realkey = substr(sha1($user->password.Pluf::f('secret_key')), 0, 8);
+                if ($_SERVER['PHP_AUTH_PW'] == $realkey) {
+                    $request->user = $user;
+                }
+            }
+        }
+
+        if (IDF_Precondition::accessSource($request) !== true) {
+            $response = new Pluf_HTTP_Response("");
+            $response->status_code = 401;
+            $response->headers['WWW-Authenticate']='Basic realm="git for '.$this->project.'"';
+            return $response;
+        }
+
+        $path = $match[2];
+ 
+        // update files before delivering them
+        if (($path == 'objects/info/pack') || ($path == 'info/refs')) {
+            $cmd = sprintf(Pluf::f('idf_exec_cmd_prefix', '').
+                       'GIT_DIR=%s '.Pluf::f('git_path', 'git').' update-server-info -f',
+                       escapeshellarg($this->repo));
+            self::shell_exec('IDF_Scm_Git::repository', $cmd);
+        }
+
+        // smart HTTP discovery
+        if (($path == 'info/refs') &&
+          (array_key_exists('service', $request->GET))){
+            $service = $request->GET["service"];
+            switch ($service) {
+            case 'git-upload-pack':
+            case 'git-receive-pack':
+                $content = sprintf('%04x',strlen($service)+15).
+                         '# service='.$service."\n0000";
+                $content .= self::shell_exec('IDF_Scm_Git::repository',
+                         $service.' --stateless-rpc --advertise-refs '.
+                         $this->repo);
+                $response = new Pluf_HTTP_Response($content,
+                         'application/x-'.$service.'-advertisement');
+                return $response;
+            default:
+                throw new Exception('unknown service: '.$service);
+            }
+        }
+
+        switch($path) {
+        // smart HTTP RPC
+        case 'git-upload-pack':
+        case 'git-receive-pack':
+            $response = new Pluf_HTTP_Response_CommandPassThru($path.
+                   ' --stateless-rpc '.$this->repo,
+                   'application/x-'.$path.'-result');
+            $response->addStdin('php://input');
+            return $response;
+
+        // regular file
+        default:
+            // make sure we're inside the repo hierarchy (ie. no break-out)
+            if (is_file($this->repo.'/'.$path) &&
+              strpos(realpath($this->repo.'/'.$path), $this->repo.'/') == 0) {
+                return new Pluf_HTTP_Response_File($this->repo.'/'.$path,
+                       'application/octet-stream');
+            } else {
+                return new Pluf_HTTP_Response_NotFound($request);
+            }
+        }
     }
 }

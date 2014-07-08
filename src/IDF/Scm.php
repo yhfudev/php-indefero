@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -88,22 +88,36 @@ class IDF_Scm
     }
 
     /**
-     * Run exec and log some information.
+     * Runs the given command and log some information.
+     *
+     * A previous version used plain exec(), but this should not be used
+     * for various reasons, one being that this command does not preserve
+     * trailing whitespace, which is essential for proper diff parsing.
      *
      * @param $caller Calling method
      * @param $cmd Command to run
      * @param &$out Array of output
      * @param &$return Return value
-     * @return string Last line of the command
      */
     public static function exec($caller, $cmd, &$out=null, &$return=null)
     {
+        $return = -1;
         Pluf_Log::stime('timer');
-        $ret = exec($cmd, $out, $return);
+        $fp = popen($cmd, 'r');
+        $buf = '';
+        if ($fp !== false) {
+            while (!feof($fp)) {
+                $buf .= fread($fp, 1024);
+            }
+            $return = pclose($fp);
+        }
+        $out = preg_split('/\r\n|\r|\n/', $buf);
+        $elem = count($out);
+        if ($elem > 0 && $out[$elem-1] === '')
+            unset($out[$elem-1]);
         Pluf_Log::perf(array($caller, $cmd, Pluf_Log::etime('timer', 'total_exec')));
         Pluf_Log::debug(array($caller, $cmd, $out));
         Pluf_Log::inc('exec_calls');
-        return $ret;
     }
 
     /**
@@ -325,7 +339,8 @@ class IDF_Scm
      * stdClass object {
      *  'additions' => array('path/to/file', 'path/to/directory', ...),
      *  'deletions' => array('path/to/file', 'path/to/directory', ...),
-     *  'renames' => array('old/path/to/file' => 'new/path/to/file', ...)
+     *  'renames' => array('old/path/to/file' => 'new/path/to/file', ...),
+     *  'copies' => array('path/to/source' => 'path/to/target', ...),
      *  'patches' => array('path/to/file', ...),
      *  'properties' => array('path/to/file' => array(
      *              'propname' => 'propvalue', 'deletedprop' => null, ...)
@@ -472,6 +487,20 @@ class IDF_Scm
     public static function smartEncode($path)
     {
         return str_replace('%2F', '/', rawurlencode($path));
+    }
+
+    /**
+     * Returns the number of slashes and preceeding path components
+     * that should be stripped from paths in the SCM's diff output
+     */
+    public function getDiffPathStripLevel()
+    {
+        return 0;
+    }
+
+    public function repository($request, $match)
+    {
+        throw new Exception('This repository does not support web based repository access');
     }
 }
 

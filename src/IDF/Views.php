@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,17 +32,68 @@ Pluf::loadFunction('Pluf_Shortcuts_GetFormForModel');
 class IDF_Views
 {
     /**
-     * List all the projects managed by InDefero.
-     *
-     * Only the public projects are listed or the private with correct
-     * rights.
+     * The index view.
      */
     public function index($request, $match)
     {
-        $projects = self::getProjects($request->user);
-        return Pluf_Shortcuts_RenderToResponse('idf/index.html', 
+        $forge = IDF_Forge::instance();
+        if (!$forge->isCustomForgePageEnabled()) {
+            $url = Pluf_HTTP_URL_urlForView('IDF_Views::listProjects');
+            return new Pluf_HTTP_Response_Redirect($url);
+        }
+
+        return Pluf_Shortcuts_RenderToResponse('idf/index.html',
+                                                array('page_title' => __('Welcome'),
+                                                      'content' => $forge->getCustomForgePageContent(),
+                                                ),
+                                                $request);
+    }
+
+    /**
+     * List all projects unfiltered
+     *
+     * @param unknown_type $request
+     * @param unknown_type $match
+     * @return Pluf_HTTP_Response
+     */
+    public function listProjects($request, $match)
+    {
+        $match = array('', 'all', 'name');
+        return $this->listProjectsByLabel($request, $match);
+    }
+
+    /**
+     * List projects, optionally filtered by label
+     *
+     * @param unknown_type $request
+     * @param unknown_type $match
+     * @return Pluf_HTTP_Response
+     */
+    public function listProjectsByLabel($request, $match)
+    {
+        list(, $tagId, $order) = $match;
+
+        $tag = false;
+        if ($tagId !== 'all') {
+            $tag = Pluf::factory('IDF_Tag')->get($match[1]);
+            // ignore non-global tags
+            if ($tag !== false && $tag->project > 0) {
+                $tag = false;
+            }
+        }
+        $order = in_array($order, array('name', 'activity')) ? $order : 'name';
+
+        $projects = self::getProjects($request->user, $tag, $order);
+        $stats = self::getProjectsStatistics($projects);
+        $projectLabels = self::getProjectLabelsWithCounts($request->user);
+
+        return Pluf_Shortcuts_RenderToResponse('idf/listProjects.html',
                                                array('page_title' => __('Projects'),
-                                                     'projects' => $projects),
+                                                     'projects' => $projects,
+                                                     'projectLabels' => $projectLabels,
+                                                     'tag' => $tag,
+                                                     'order' => $order,
+                                                     'stats' => new Pluf_Template_ContextVars($stats)),
                                                $request);
     }
 
@@ -51,7 +102,7 @@ class IDF_Views
      */
     public function login($request, $match)
     {
-        if (isset($request->POST['action']) 
+        if (isset($request->POST['action'])
             and $request->POST['action'] == 'new-user') {
             $login = (isset($request->POST['login'])) ? $request->POST['login'] : '';
             $url = Pluf_HTTP_URL_urlForView('IDF_Views::register', array(),
@@ -87,7 +138,7 @@ class IDF_Views
         $params = array('request'=>$request);
         if ($request->method == 'POST') {
             $form = new IDF_Form_Register(array_merge(
-            									(array)$request->POST, 
+            									(array)$request->POST,
 												(array)$request->FILES
 												), $params);
             if ($form->isValid()) {
@@ -104,7 +155,7 @@ class IDF_Views
         $context = new Pluf_Template_Context(array());
         $tmpl = new Pluf_Template('idf/terms.html');
         $terms = Pluf_Template::markSafe($tmpl->render($context));
-        return Pluf_Shortcuts_RenderToResponse('idf/register/index.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/register/index.html',
                                                array('page_title' => $title,
                                                      'form' => $form,
                                                      'terms' => $terms),
@@ -129,7 +180,7 @@ class IDF_Views
         } else {
             $form = new IDF_Form_RegisterInputKey();
         }
-        return Pluf_Shortcuts_RenderToResponse('idf/register/inputkey.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/register/inputkey.html',
                                                array('page_title' => $title,
                                                      'form' => $form),
                                                $request);
@@ -164,7 +215,7 @@ class IDF_Views
                 $request->session->clear();
                 $request->session->setData('login_time', gmdate('Y-m-d H:i:s'));
                 $user->last_login = gmdate('Y-m-d H:i:s');
-                $user->update();                
+                $user->update();
                 $request->user->setMessage(__('Welcome! You can now participate in the life of your project of choice.'));
                 $url = Pluf_HTTP_URL_urlForView('IDF_Views::index');
                 return new Pluf_HTTP_Response_Redirect($url);
@@ -172,7 +223,7 @@ class IDF_Views
         } else {
             $form = new IDF_Form_RegisterConfirmation(null, $extra);
         }
-        return Pluf_Shortcuts_RenderToResponse('idf/register/confirmation.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/register/confirmation.html',
                                                array('page_title' => $title,
                                                      'new_user' => $user,
                                                      'form' => $form),
@@ -209,7 +260,7 @@ class IDF_Views
 
     /**
      * If the key is valid, provide a nice form to reset the password
-     * and automatically login the user. 
+     * and automatically login the user.
      *
      * This is also firing the password change event for the plugins.
      */
@@ -234,7 +285,7 @@ class IDF_Views
                 $request->session->clear();
                 $request->session->setData('login_time', gmdate('Y-m-d H:i:s'));
                 $user->last_login = gmdate('Y-m-d H:i:s');
-                $user->update();                
+                $user->update();
                 $request->user->setMessage(__('Welcome back! Next time, you can use your broswer options to remember the password.'));
                 $url = Pluf_HTTP_URL_urlForView('IDF_Views::index');
                 return new Pluf_HTTP_Response_Redirect($url);
@@ -242,12 +293,12 @@ class IDF_Views
         } else {
             $form = new IDF_Form_PasswordReset(null, $extra);
         }
-        return Pluf_Shortcuts_RenderToResponse('idf/user/passrecovery.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/user/passrecovery.html',
                                                array('page_title' => $title,
                                                      'new_user' => $user,
                                                      'form' => $form),
                                                $request);
-        
+
     }
 
     /**
@@ -266,7 +317,7 @@ class IDF_Views
         } else {
             $form = new IDF_Form_PasswordInputKey();
         }
-        return Pluf_Shortcuts_RenderToResponse('idf/user/passrecovery-inputkey.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/user/passrecovery-inputkey.html',
                                                array('page_title' => $title,
                                                      'form' => $form),
                                                $request);
@@ -279,7 +330,23 @@ class IDF_Views
     {
         $title = __('Here to Help You!');
         $projects = self::getProjects($request->user);
-        return Pluf_Shortcuts_RenderToResponse('idf/faq.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/faq.html',
+                                               array(
+                                                     'page_title' => $title,
+                                                     'projects' => $projects,
+                                                     ),
+                                               $request);
+
+    }
+
+    /**
+     * Download archive FAQ.
+     */
+    public function faqArchiveFormat($request, $match)
+    {
+        $title = __('InDefero Upload Archive Format');
+        $projects = self::getProjects($request->user);
+        return Pluf_Shortcuts_RenderToResponse('idf/faq-archive-format.html',
                                                array(
                                                      'page_title' => $title,
                                                      'projects' => $projects,
@@ -295,7 +362,7 @@ class IDF_Views
     {
         $title = __('InDefero API (Application Programming Interface)');
         $projects = self::getProjects($request->user);
-        return Pluf_Shortcuts_RenderToResponse('idf/faq-api.html', 
+        return Pluf_Shortcuts_RenderToResponse('idf/faq-api.html',
                                                array(
                                                      'page_title' => $title,
                                                      'projects' => $projects,
@@ -305,42 +372,169 @@ class IDF_Views
     }
 
     /**
-     * Returns a list of projects accessible for the user.
+     * Returns a list of ids of projects that are visible for the given user
      *
-     * @param Pluf_User
-     * @return ArrayObject IDF_Project
+     * @param Pluf_User $user
      */
-    public static function getProjects($user)
+    private static function getUserVisibleProjectIds($user)
     {
         $db =& Pluf::db();
-        $false = Pluf_DB_BooleanToDb(false, $db);
-        if ($user->isAnonymous()) {
-            $sql = sprintf('%s=%s', $db->qn('private'), $false);
-            return Pluf::factory('IDF_Project')->getList(array('filter'=> $sql,
-                                                               'order' => 'name ASC'));
-        }
+        // the administrator can see all projects
         if ($user->administrator) {
-            return Pluf::factory('IDF_Project')->getList(array('order' => 'name ASC'));
-        }
-        // grab the list of projects where the user is admin, member
-        // or authorized
-        $perms = array(
-                       Pluf_Permission::getFromString('IDF.project-member'),
-                       Pluf_Permission::getFromString('IDF.project-owner'),
-                       Pluf_Permission::getFromString('IDF.project-authorized-user')
-                       );
-        $sql = new Pluf_SQL("model_class='IDF_Project' AND owner_class='Pluf_User' AND owner_id=%s AND negative=".$false, $user->id);
-        $rows = Pluf::factory('Pluf_RowPermission')->getList(array('filter' => $sql->gen()));
-        
-        $sql = sprintf('%s=%s', $db->qn('private'), $false);
-        if ($rows->count() > 0) {
             $ids = array();
-            foreach ($rows as $row) {
-                $ids[] = $row->model_id;
+            $sql_results = $db->select(
+                'SELECT id FROM '.Pluf::f('db_table_prefix', '').'idf_projects'
+            );
+            foreach ($sql_results as $id) {
+                $ids[] = $id['id'];
             }
-            $sql .= sprintf(' OR id IN (%s)', implode(', ', $ids));
+            return $ids;
         }
-        return Pluf::factory('IDF_Project')->getList(array('filter' => $sql,
-                                                           'order' => 'name ASC'));
+
+        // anonymous users can only see non-private projects
+        $false = Pluf_DB_BooleanToDb(false, $db);
+        $sql_results = $db->select(
+            'SELECT id FROM '.$db->pfx.'idf_projects '.
+            'WHERE '.$db->qn('private').'='.$false
+        );
+
+        $ids = array();
+        foreach ($sql_results as $id) {
+            $ids[] = $id['id'];
+        }
+
+        // registered users may additionally see private projects with which
+        // they're somehow affiliated
+        if (!$user->isAnonymous()) {
+            $perms = array(
+                Pluf_Permission::getFromString('IDF.project-member'),
+                Pluf_Permission::getFromString('IDF.project-owner'),
+                Pluf_Permission::getFromString('IDF.project-authorized-user')
+            );
+            $permSql = new Pluf_SQL(
+                "model_class='IDF_Project' AND owner_class='Pluf_User' ".
+                "AND owner_id=%s AND negative=".$false, $user->id
+            );
+            $rows = Pluf::factory('Pluf_RowPermission')->getList(array('filter' => $permSql->gen()));
+            if ($rows->count() > 0) {
+                foreach ($rows as $row) {
+                    if (in_array($row->model_id, $ids))
+                        continue;
+                    $ids[] = $row->model_id;
+                }
+            }
+        }
+        return $ids;
+    }
+
+    /**
+     * Returns a list of projects accessible for the user and optionally filtered by tag.
+     *
+     * @param Pluf_User
+     * @param IDF_Tag
+     * @return ArrayObject IDF_Project
+     */
+    public static function getProjects($user, $tag = false, $order = 'name')
+    {
+        $db =& Pluf::db();
+        $sql = new Pluf_SQL('1=1');
+        if ($tag !== false) {
+            $sql->SAnd(new Pluf_SQL('idf_tag_id=%s', $tag->id));
+        }
+
+        $projectIds = self::getUserVisibleProjectIds($user);
+        if (count($projectIds) == 0) {
+            return new ArrayObject();
+        }
+
+        $sql->SAnd(new Pluf_SQL(sprintf($db->pfx.'idf_projects.id IN (%s)', implode(', ', $projectIds))));
+
+        $orderTypes = array(
+            'name' => 'name ASC',
+            'activity' => 'value DESC, name ASC',
+        );
+        return Pluf::factory('IDF_Project')->getList(array(
+            'filter'=> $sql->gen(),
+            'view' => 'join_activities_and_tags',
+            'order' => $orderTypes[$order],
+        ));
+    }
+
+    /**
+     * Returns a list of global tags each carrying the number of projects that have the
+     * particular tag set
+     *
+     * @param Pluf_User $user
+     * @return array
+     */
+    public static function getProjectLabelsWithCounts($user) {
+
+        $sql = new Pluf_SQL('project IS NULL');
+
+        $projectIds = self::getUserVisibleProjectIds($user);
+        if (count($projectIds) == 0) {
+            return new ArrayObject();
+        }
+
+        $sql->SAnd(new Pluf_SQL(sprintf('idf_project_id IN (%s)', implode(', ', $projectIds))));
+
+        $tagList = Pluf::factory('IDF_Tag')->getList(array(
+            'filter' => $sql->gen(),
+            'view' => 'join_projects',
+            'order' => 'class ASC, lcname ASC'
+        ));
+
+        $maxProjectCount = 0;
+        foreach ($tagList as $tag) {
+            $maxProjectCount = max($maxProjectCount, $tag->project_count);
+        }
+
+        $tags = array();
+        foreach ($tagList as $tag) {
+            // group by class
+            if (!array_key_exists($tag->class, $tags)) {
+                $tags[$tag->class] = array();
+            }
+            $tag->rel_project_count = $tag->project_count / (double) $maxProjectCount;
+            $tags[$tag->class][] = $tag;
+        }
+        return $tags;
+    }
+
+
+    /**
+     * Returns statistics on a list of projects.
+     *
+     * @param ArrayObject IDF_Project
+     * @return Associative array of statistics
+     */
+    public static function getProjectsStatistics($projects)
+    {
+        $projectIds = array(0);
+        foreach ($projects as $project) {
+            $projectIds[] = $project->id;
+        }
+
+        $forgestats = array();
+
+        // count overall project stats
+        $forgestats['total'] = 0;
+        $what = array(
+            'downloads' => 'IDF_Upload',
+            'reviews'   => 'IDF_Review',
+            'issues'    => 'IDF_Issue',
+            'docpages'  => 'IDF_Wiki_Page',
+            'commits'   => 'IDF_Commit',
+        );
+
+        foreach ($what as $key => $model) {
+            $count = Pluf::factory($model)->getCount(array(
+                'filter' => sprintf('project IN (%s)', implode(', ', $projectIds))
+            ));
+            $forgestats[$key] = $count;
+            $forgestats['total'] += $count;
+        }
+
+        return $forgestats;
     }
 }

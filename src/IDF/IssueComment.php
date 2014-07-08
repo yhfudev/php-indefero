@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -155,10 +155,19 @@ class IDF_IssueComment extends Pluf_Model
                     $out .= __('Owner:'); break;
                 case 'lb':
                     $out .= __('Labels:'); break;
+                case 'rel':
+                    $out .= __('Relations:'); break;
                 }
                 $out .= '</strong>&nbsp;';
-                if ($w == 'lb') {
-                    $out .= Pluf_esc(implode(', ', $v));
+                if ($w == 'lb' || $w == 'rel') {
+                    foreach ($v as $t => $ls) {
+                        foreach ($ls as $l) {
+                            if ($t == 'rem') $out .= '<s>';
+                            $out .= Pluf_esc($l);
+                            if ($t == 'rem') $out .= '</s>';
+                            $out .= ' ';
+                        }
+                    }
                 } else {
                     $out .= Pluf_esc($v);
                 }
@@ -168,7 +177,7 @@ class IDF_IssueComment extends Pluf_Model
         }
         $out .= '</td></tr>';
         $out .= "\n".'<tr class="extra"><td colspan="2">
-<div class="helptext right">'.sprintf(__('Comment on <a href="%s" class="%s">issue&nbsp;%d</a>, by %s'), $url, $ic, $issue->id, $user).'</div></td></tr>';
+<div class="helptext right">'.sprintf(__('Comment on <a href="%1$s" class="%2$s">issue %3$d</a>, by %4$s'), $url, $ic, $issue->id, $user).'</div></td></tr>';
         return Pluf_Template::markSafe($out);
     }
 
@@ -179,7 +188,7 @@ class IDF_IssueComment extends Pluf_Model
             .Pluf_HTTP_URL_urlForView('IDF_Views_Issue::view',
                                       array($request->project->shortname,
                                             $issue->id));
-        $title = sprintf(__('%s: Comment on issue %d - %s'),
+        $title = sprintf(__('%1$s: Comment on issue %2$d - %3$s'),
                          Pluf_esc($request->project->name),
                          $issue->id, Pluf_esc($issue->summary));
         $url .= '#ic'.$this->id;

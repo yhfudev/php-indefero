@@ -1,0 +1,320 @@
+# InDefero 1.3.3 - Sun Nov 18 22:54:00 UTC 2012
+
+**ATTENTION**: InDefero needs Pluf [a45dc195](http://projects.ceondo.com/p/pluf/source/commit/a45dc195)
+or newer to run properly!
+
+## Bugfixes
+
+- A long standing bug in the Mercurial plugin that lead to corruption
+  of boolean configuration values in the `hgrc` of the served repository
+  has been fixed (issue 523).
+ 
+- If an anonymous or authenticated user had no access to any project in a 
+  forge, all projects were listed for him (but still no one was actually
+  accessible). This has been fixed. 
+
+- Fixed a problem where the SyncGit plugin doesn't properly updates the
+  authorized_keys file when the public key data contained slashes (thanks
+  to Simon Gareste for the fix!)
+
+- Under PostgreSQL indefero could not be set up because of a circular
+  foreign key dependency. This has been fixed (issue 800).
+
+- Under PostgreSQL new projects could not be created due to a failing
+  foreign key relation. Adding project tags was not possible for a similar
+  reason. This has been fixed (issue 800, continued).
+
+- If a project was created based on the settings of an existing project,
+  not all settings, like for example the new notification settings, have
+  been copied. This has been changed insofar that now all properties except
+  the project's URL, logo and individual SCM settings are copied by default.
+
+- Wiki pages couldn't be properly saved with E_NOTICE enabled because
+  of a syntax error (fixes issue 808).
+
+- Indefero now shows detected copies in git changesets.
+
+- A user is no longer redirected to the Help page if he enters 'H' in the
+  password text field on the login page (fixes issue 821).
+
+# InDefero 1.3.2 - Wed May 09 20:05 2012 UTC
+
+## Bugfixes
+
+- Fix two bugs in the project list view if no project
+  is visible to the user or available in the forge (issue 805)
+
+# InDefero 1.3.1 - Sun May 06 20:32 2012 UTC
+
+## Bugfixes
+
+- Compatiblity fixes for PostgreSQL (issue 800)
+- Fix TOC generation in wiki (issue 803)
+- Make the display of large files and diffs faster (issue 804)
+- Make the project list faster and its tag list more accurate by not
+  counting projects that are invisible to the current user
+
+## Language and Translations
+
+- French translation updated (thanks to Jonathan Aillet!)
+
+# InDefero 1.3 - Sun Apr 15 21:10 2012 UTC
+
+This new major release of Indefero is possible thanks to the sponsor of
+[Scilab Enterprises](http://www.scilab-enterprises.com/).
+Scilab Enterprises is proud to share with the Indefero community the new
+changes which greatly improves the overall quality of the Indefero
+forge.
+
+**ATTENTION**: InDefero now requires a PHP 5.3 compatible setup! You also 
+need Pluf [4121ca4](http://projects.ceondo.com/p/pluf/source/commit/4121ca4)
+or newer to properly run this version of Indefero!
+
+## Changes
+
+- Indefero's post-commit web hook now by default issues HTTP PUT instead of
+  HTTP POST requests and carries the authentication digest in the new
+  `Web-Hook-Hmac` header.  The old behaviour can be re-enabled by setting the
+  `$cfg['webhook_processing']` flag to "compat", we urge you to change the
+  implementations of this web hook as this setting is likely to be removed
+  in future versions of Indefero.
+- Indefero now needs PHP's zip module which is usually not enabled by default.
+- Previously configured email notifications now have to be explicitely
+  activated in the project's administrative area.
+
+## New Features
+
+- It is now possible to upload and embed resources like images or text
+  files into wiki pages. If no preview for a resource's mime type is
+  available, than a download link is provided for it instead.
+- The notification system has been overhauled; it is now possible to configure
+  what kind of user group, project administrators, members and / or additional
+  mail addresses are notified about updates in a certain section, such as 
+  issues, downloads, reviews, and so on. We now also ensure that notification
+  emails for one object are uniquely identifyable to support a grouped view
+  in email clients that support that. (fixes issues  334, 452, 480, and 791)
+- Indefero can now be configured to record activity metrics for all projects
+  in a forge. This needs a special cron job named `activitycron.php` 
+  (under `scripts`) that is run on a regular basis. The metrics can be
+  fine-tuned via `activity_section_weights` and `activity_lookback` in
+  `idf.php` and the result is visible as green bar in the project list view.
+- The forge's project list has been overhauled - its now possible to attach
+  labels on projects and to filter and order the project list by various
+  criteria. Additionally, projects can now get an external project URL
+  configured that is displayed as linkable icon right beside the project name
+  (if available)
+- Forge administrators can furthermore configure an alternative entry page
+  for the forge that is displayed instead of the plain project list. This
+  page accepts standard Markdown syntax and has support for the new
+  `projectlist` macro that allows the (partial) inline rendering of the
+  known global project list. 
+- It is now also possible to configure a web hook that informs an external
+  URL about new and updated downloads for a specific project, similar to the
+  available post-commit web hook.
+- One can now upload multiple files at once by using a special archive format
+  which Indefero processes in the background and for which individual upload
+  records are created.
+
+## Bugfixes
+
+- Indefero no longer confuses a non-owner of an issue with a notification that
+  a particular ticket has been opened and assigned to him (fixes issue 562)
+- The diff view now renders properly in Firefox when a minimum font size
+  is configured or the user zooms the web page (fixes issue 773)
+- Ensure that IDF does not break UTF-8 encoded strings when
+  shortening them for view rendering (issue 785)
+- Two XSS holes in the issue and review details views are closed (fixes issue 793)
+
+## Language and Translations
+
+- Multiple fixes to English source strings (fixes issues 763, 766, and 772,
+  thanks to JP Fleury!)
+- Updates to the French translation (thanks to Victor Quinault)
+
+# InDefero 1.2 - Sun Nov 6 23:04:00 UTC 2011
+
+ATTENTION: You need Pluf [46b7f251](http://projects.ceondo.com/p/pluf/source/commit/46b7f251)
+or newer to properly run this version of Indefero!
+
+## New Features
+
+- Indefero's issue tracker can now bi-directionally link issues with variable,
+  configurable terms, such as "is related to", "is blocked by" or
+  "is duplicated by" (issue 638)
+- When you search for issues, the results can further be refined by issue state
+  (open or closed) and label (partially implements issue 548)
+- Source and diff views now make characters like line endings, tabs and other
+  "invisible" control characters visible on hover and cope with long lines much
+  better (issue 636)
+- Mercurial source views now show parent revisions (if any) and detailed change
+  information
+- Subversion source views now show detailed change information (issue 622)
+- File download URLs now contain the file name rather than the upload id;
+  old links still work though (issues 559 and 686)
+- monotone file and directory attributes are displayed in the tree and file view
+  (needs a monotone with an interface version of 13.1 or newer)
+- The context area is now kept in view when a page scrolls down several pages
+- A summary section has been added to the issue tracker with statistics about
+  open / closed  issues, unresolved issues grouped by tags and owners
+- The project list and title has gathered a customizable icon for each project
+- The download section now provides MD5 checksums for uploaded files
+- Wiki pages now come with a designated stylesheet for printer output (issue 713)
+
+## Bugfixes
+
+- Git's cron job doesn't erase manually added keys anymore (issue 247)
+- The SVN interface acts more robust if an underlying repository has been
+  restructured (issues 364 and 721)
+- monotone zip archive entries now all carry the revision date as mtime (issue 645)
+- The timeline only now only displays filter options for items a user has
+  actually access to (issue 655)
+- The log, tags and branches parsers for Mercurial are more robust now (issue 663)
+- Several SSH public key parsing issues have been fixed and the check for existing,
+  uploaded keys has been improved (issue 679)
+- Diff views now show empty context lines for git and hg again (issue 688)
+- The SVN command line client no longer accidential tries to store the login
+  credentials we give him as arguments for the user executing the SVN command
+- The usher section in the forge administration no longer displays a bogus
+  server enty in case no monotone server is configured in the connected
+  usher instance
+- A timeout that popped up when Usher is restarted has been fixed (issue 695)
+- The SyncMonotone plugin now cleans up partial artifacts it created during the
+  addition of a new project or monotone key, in case an error popped up in the
+  middle (issue 697)
+- Indefero now sends the MD5 checksum as HTTP header when downloading a file from the
+  download area; additionally, a unneeded redirect has been removed (issue 716)
+- Source links without a specific revision did not work due to a wrong regex
+  (issue 730)
+- Avatar URL generation use correctly the configuration (issue 732)
+- The SyncGit plugin no longer fails to remove a non-existing post-update hook
+  on repository creation (issue 752)
+- When uploading a project logo, an existing uploaded file with the same name
+  no longer leads to an error, but is simple overwritten (fixes issue 740)
+- The error detection and reporting in the SyncMonotone plugin has been improved
+- The branch links users of the Subversion frontend get when they enter a wrong
+  revision are fixed; this list is now also only displayed (for any SCM) if
+  there are actually branches available in the repository
+- If git's author name is not encoded in an UTF-8 compatible encoding, skip the
+  author lookup, as we have no information what the author string is actually
+  encoded in
+- Indefero no longer displays an empty parents paragraph in the commit view for
+  root revisions of a git repository
+- Indefero now only shows the tags of the closed and not the open issues in the
+  closed issues list
+
+## Documentation
+
+- The documentation on the setup of the monotone plugin has been improved.
+
+## Translations
+
+- The Russian translation has been enabled by default (thanks for all the great
+  work, Denis Kot and Litew!)
+- Brazilian Portuguese translation started (thanks to Pedro Kiefer!)
+- Turkish translation started (thanks to Ozan!)
+
+# InDefero 1.1.2 - Thu May 26 07:42:25 2011 UTC
+
+## Bugfixes
+
+- Fix tags extraction from git repository (issue 675)
+- Fix SSH validation method (issue 671)
+- Fix malformed URL in the RSS (issue 666)
+- Fix validateRevision call for Mercurial Scm (issue 657)
+
+## Translations
+
+- Missing word in French translation (issue 672)
+- Update Spanish translation
+
+# InDefero 1.1.1 - Mon Mar 28 15:52 2011 UTC
+
+## Bugfixes
+
+- Fix an incompatibility with Python 3.1 in gitserve.py (issue 554)
+- Fix PHP error when the commit view shows a commit with changed binary files (issue 643)
+- A migration problem prevented the preferences page being displayed properly (issues 644 and 653)
+- Fix PHP error when trying to create Mercurial source archives (issue 648)
+- Improve the French translation (issue 651)
+- Registration page missed a link to password recovery that was mentioned in a form error (issue 652)
+
+# InDefero 1.1 - Sun Mar 20 11:44 2011 UTC
+
+## New Features
+
+* _Version control_:
+ - Support for the monotone Version Control system (see [[InstallationScmMonotone]])
+ - Display detailed changeset information in the commit details (git, mtn) (issue 544)
+ - Show branch in the commit details (git, mtn, hg) (issue 450)
+ - Render branch and tag names in a popup and make them filterable (git, hg, mtn) (issue 601)
+
+* _Issue tracking_:
+ - Forge-wide and per-project watch lists of starred issues (issue 589)
+ - Configure a default issue template for each project (issues 212 and 540)
+ - Pick default issue labels from the configured project settings (issue 556)
+ - Navigate to a preceding / following issue in the issue detail view
+ - Many new text syntaxes to auto-link revisions (see [[AutomaticLinks]], issue 569)
+
+* _Documentation wiki_:
+ - Automatically create a table of contents on wiki pages (issue 350)
+ - Allow the usage of text labels for Wiki text links (issue 456)
+
+* _Other_:
+ - Enhanced user profile page (issue 510)
+ - Manage multiple (commit) emails in the account settings (issues 136 and 500)
+ - Filter the timeline and its feed by item type (issue 543)
+ - Add multiple email addresses for project notifications (issue 372)
+ - Direct links to other projects via the new `Project List` dropdown
+ - InDefero gained a favicon (issue 594)
+
+## Bugfixes
+
+- Fix `Need SSH_ORIGINAL_COMMAND in environment` error for git sync (issue 198)
+- Added an option to disable lengthy project size calculation in the forge (issue 403)
+- Fix a problem when deleting an orphaned git repository (issue 467)
+- Ignore XML parsing problems when trying to retrieve commit messages for svn (issues 469 and 518)
+- Sort the project list by the display name of the project (issue 477)
+- Project creation form now has a short description field as well (issue 479)
+- Add more file extensions supported by our in-tree prettify version (issues 490 and 567)
+- Improve the parsing of hg's log output (issues 507 and 508)
+- Do not clean `<ins>` and `<del>` HTML markup from user input (issue 509)
+- Improve HTML validation by switching from `strict` to `transitional` DOCTYPE (issue 511)
+- Properly handle git commits without a changelog title (issue 520)
+- Improve BSD compatibility in shell scripts (issue 526)
+- Properly render inner whitespaces in viewed issue attachments (issue 528)
+- Support for uploading SSH keys without optional comment (issue 531)
+- Recognize irc: and git: protocols in Markdown renderer (issue 546)
+- New config option `git_core_quotepath` to handle non-ASCII git file names (issue 553)
+- Ensured that active views are rendered in the menu as such (issue 555)
+- Add CSS for nested and mixed ordered and unordered lists (issue 557)
+- Directories are now sorted before files in source tree views (issue 573)
+- File attachments now have explicit view and download links in issue views (issue 575)
+- Display anonymous access URL when user has no SSH key registered (issue 588)
+- Improve the rendering of tag lists in issue views (issue 591)
+- Improved error page when a commit or branch was not found (issue 609)
+- Disable browser autocomplete of password fields in the account settings (issue 616)
+- Improvements in the automatic linker parser (issue 618)
+- The `createIssue` API method did not check the API authentication (issue 619)
+- Reduce the memory footprint and compatibility of the internal diff parser (issues 627 and 633)
+- Print the git branches and tags in bold which contain the currently displayed revision
+
+## Documentation
+
+- Document how to contribute to Indefero in `CONTRIBUTE.mdtext` (issue 486)
+- Note possible problems with mbstring.func_overload in `INSTALL.mdtext` (issue 481)
+- Improve links to Markdown documentation (issue 489)
+- Explain purpose of `idf_strong_key_check` in `idf.php-dist` (issue 516)
+
+## Translations
+
+- Spanish translation added
+- Started with a Simplified Chinese translation (issue 521)
+- Started with a Russian translation
+- Updates and fixes to the French translation (issue 574)
+- Updates and fixes to the German translation
+- English source language has been improved (issues 441, 478, and 631)
+
+# InDefero 1.0 - Tue Apr 20 07:00 2010 UTC
+
+First stable release.
+

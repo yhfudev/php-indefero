@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -190,7 +190,12 @@ class IDF_Precondition
             return true; // Again need authentication error
         }
         $request->user = $users[0];
-        IDF_Middleware::setRights($request);
+        
+        // Don't try to load projects rights access if we are not in one
+        if ($request->query !== "/api/") {
+            IDF_Middleware::setRights($request);
+        }
+            
         return true;
     }
 

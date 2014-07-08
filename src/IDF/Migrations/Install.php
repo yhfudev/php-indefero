@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ function IDF_Migrations_Install_setup($params=null)
 {
     $models = array(
                     'IDF_Project',
+                    'IDF_ProjectActivity',
                     'IDF_Tag',
                     'IDF_Issue',
                     'IDF_IssueComment',
@@ -40,8 +41,10 @@ function IDF_Migrations_Install_setup($params=null)
                     'IDF_IssueFile',
                     'IDF_Commit',
                     'IDF_Timeline',
-                    'IDF_WikiPage',
-                    'IDF_WikiRevision',
+                    'IDF_Wiki_Resource',
+                    'IDF_Wiki_ResourceRevision',
+                    'IDF_Wiki_Page',
+                    'IDF_Wiki_PageRevision',
                     'IDF_Review',
                     'IDF_Review_Patch',
                     'IDF_Review_Comment',
@@ -50,12 +53,18 @@ function IDF_Migrations_Install_setup($params=null)
                     'IDF_Scm_Cache_Git',
                     'IDF_Queue',
                     'IDF_Gconf',
+                    'IDF_EmailAddress',
+                    'IDF_IssueRelation',
                     );
     $db = Pluf::db();
     $schema = new Pluf_DB_Schema($db);
     foreach ($models as $model) {
         $schema->model = new $model();
         $schema->createTables();
+    }
+    foreach ($models as $model) {
+        $schema->model = new $model();
+        $schema->createConstraints();
     }
     // Install the permissions
     $perm = new Pluf_Permission();
@@ -95,8 +104,10 @@ function IDF_Migrations_Install_teardown($params=null)
                     'IDF_Review_Comment',
                     'IDF_Review_Patch',
                     'IDF_Review',
-                    'IDF_WikiRevision',
-                    'IDF_WikiPage',
+                    'IDF_Wiki_PageRevision',
+                    'IDF_Wiki_Page',
+                    'IDF_Wiki_ResourceRevision',
+                    'IDF_Wiki_Resource',
                     'IDF_Timeline',
                     'IDF_IssueFile',
                     'IDF_Search_Occ',
@@ -106,10 +117,17 @@ function IDF_Migrations_Install_teardown($params=null)
                     'IDF_Issue',
                     'IDF_Tag',
                     'IDF_Commit',
+                    'IDF_ProjectActivity',
                     'IDF_Project',
+                    'IDF_EmailAddress',
+                    'IDF_IssueRelation',
                     );
     $db = Pluf::db();
     $schema = new Pluf_DB_Schema($db);
+    foreach ($models as $model) {
+        $schema->model = new $model();
+        $schema->dropConstraints();
+    }
     foreach ($models as $model) {
         $schema->model = new $model();
         $schema->dropTables();

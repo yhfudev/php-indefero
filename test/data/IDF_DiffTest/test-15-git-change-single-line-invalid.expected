@@ -1,0 +1,39 @@
+<?php return array (
+  'test_file' => 
+  array (
+    'chunks' => 
+    array (
+      0 => 
+      array (
+        0 => 
+        array (
+          0 => '1',
+          1 => '',
+          2 => "Steddy is awesome\n",
+        ),
+        1 => 
+        array (
+          0 => '',
+          1 => '1',
+          2 => 'Steddy is very awesome',
+        ),
+      ),
+    ),
+    'chunks_def' => 
+    array (
+      0 => 
+      array (
+        0 => 
+        array (
+          0 => '1',
+          1 => 1,
+        ),
+        1 => 
+        array (
+          0 => '1',
+          1 => 1,
+        ),
+      ),
+    ),
+  ),
+);

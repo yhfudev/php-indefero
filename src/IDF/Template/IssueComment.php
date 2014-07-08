@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 # ***** END LICENSE BLOCK ***** */
 
 Pluf::loadFunction('Pluf_HTTP_URL_urlForView');
+Pluf::loadFunction('IDF_Template_safePregReplace');
 
 /**
  * Make the links to issues and commits.
@@ -39,26 +40,26 @@ class IDF_Template_IssueComment extends Pluf_Template_Tag
         $this->scm = IDF_Scm::get($request->project);
         if ($esc) $text = Pluf_esc($text);
         if ($autolink) {
-            $text = preg_replace('#([a-z]+://[^\s\(\)]+)#i',
-                                 '<a href="\1">\1</a>', $text);
+            $text = IDF_Template_safePregReplace('#([a-z]+://[^\s\(\)]+)#i',
+                                                 '<a href="\1">\1</a>', $text);
         }
         if ($request->rights['hasIssuesAccess']) {
-            $text = preg_replace_callback('#((?:issue|bug|ticket)(s)?\s+|\s+\#)(\d+)(\#ic\d+)?(?(2)((?:[, \w]+(?:\s+\#)?)?\d+(?:\#ic\d+)?){0,})#im',
-                                          array($this, 'callbackIssues'), $text);
+            $text = IDF_Template_safePregReplace('#((?:issue|bug|ticket)(s)?\s+|\s+\#)(\d+)(\#ic\d+)?(?(2)((?:[, \w]+(?:\s+\#)?)?\d+(?:\#ic\d+)?){0,})#im',
+                                                 array($this, 'callbackIssues'), $text);
         }
         if ($request->rights['hasReviewAccess']) {
-            $text = preg_replace_callback('#(reviews?\s+)(\d+(?:(?:\s+and|\s+or|,)\s+\d+)*)\b#i',
-                                          array($this, 'callbackReviews'), $text);
+            $text = IDF_Template_safePregReplace('#(reviews?\s+)(\d+(?:(?:\s+and|\s+or|,)\s+\d+)*)\b#i',
+                                                 array($this, 'callbackReviews'), $text);
         }
         if ($request->rights['hasSourceAccess']) {
             $verbs = array('added', 'fixed', 'reverted', 'changed', 'removed');
             $nouns = array('commit', 'commits', 'revision', 'revisions', 'rev', 'revs');
             $prefix = implode(' in|', $verbs).' in' . '|'.
                       implode('|', $nouns);
-            $text = preg_replace_callback('#((?:'.$prefix.')(?:\s+r?))([0-9a-f]{1,40}((?:\s+and|\s+or|,)\s+r?[0-9a-f]{1,40})*)\b#i',
-                                          array($this, 'callbackCommits'), $text);
-            $text = preg_replace_callback('=(src:)([^\s@#,\(\)\\\\]+(?:(\\\\)[\s@#][^\s@#,\(\)\\\\]+){0,})+(?:\@([^\s#,]+))(?:#(\d+))?=im',
-                                          array($this, 'callbackSource'), $text);
+            $text = IDF_Template_safePregReplace('#((?:'.$prefix.')(?:\s+r?))([0-9a-f]{1,40}((?:\s+and|\s+or|,)\s+r?[0-9a-f]{1,40})*)\b#i',
+                                                 array($this, 'callbackCommits'), $text);
+            $text = IDF_Template_safePregReplace('=(src:)([^\s@#,\(\)\\\\]+(?:(\\\\)[\s@#][^\s@#,\(\)\\\\]+){0,})+(?:\@([^\s#,]+))?(?:#(\d+))?=im',
+                                                 array($this, 'callbackSource'), $text);
         }
         if ($wordwrap) $text = Pluf_Text::wrapHtml($text, 69, "\n");
         if ($nl2br) $text = nl2br($text);
@@ -94,9 +95,9 @@ class IDF_Template_IssueComment extends Pluf_Template_Tag
             }
             return $m[0]; // not existing issue.
         }
-        return preg_replace_callback('#(\#)?(\d+)(\#ic\d+)?#',
-                                     array($this, 'callbackIssue'),
-                                     $m[0]);
+        return IDF_Template_safePregReplace('#(\#)?(\d+)(\#ic\d+)?#',
+                                            array($this, 'callbackIssue'),
+                                            $m[0]);
     }
 
     /**
@@ -131,7 +132,7 @@ class IDF_Template_IssueComment extends Pluf_Template_Tag
             return $m[1].call_user_func(array($this, 'callbackCommit'), array($m[2]));
         }
         // Multiple commits like 'commits 6e030e6, a25bfc1 and 3c094f8'.
-        return $m[1].preg_replace_callback('#\b[0-9a-f]{1,40}\b#i', array($this, 'callbackCommit'), $m[2]);
+        return $m[1].IDF_Template_safePregReplace('#\b[0-9a-f]{1,40}\b#i', array($this, 'callbackCommit'), $m[2]);
     }
 
     /**
@@ -163,7 +164,7 @@ class IDF_Template_IssueComment extends Pluf_Template_Tag
     {
         $keyword = rtrim($m[1]);
         if ('reviews' === $keyword) {
-            return $m[1].preg_replace_callback('#\b(\d+)\b#i', array($this, 'callbackReview'), $m[2]);
+            return $m[1].IDF_Template_safePregReplace('#\b(\d+)\b#i', array($this, 'callbackReview'), $m[2]);
         } else if ('review' === $keyword) {
             return $m[1].call_user_func(array($this, 'callbackReview'), array('', $m[2]));
         }
@@ -234,7 +235,7 @@ class IDF_Template_IssueComment extends Pluf_Template_Tag
     public function linkIssue($issue, $title, $anchor='')
     {
         $ic = (in_array($issue->status, $this->project->getTagIdsByStatus('closed'))) ? 'issue-c' : 'issue-o';
-        return '<a href="'.Pluf_HTTP_URL_urlForView('IDF_Views_Issue::view', 
+        return '<a href="'.Pluf_HTTP_URL_urlForView('IDF_Views_Issue::view',
                                                     array($this->project->shortname, $issue->id)).$anchor.'" class="'.$ic.'" title="'.Pluf_esc($issue->summary).'">'.Pluf_esc($title).'</a>';
     }
 
@@ -248,7 +249,7 @@ class IDF_Template_IssueComment extends Pluf_Template_Tag
     public function linkReview($review, $title, $anchor='')
     {
         $ic = (in_array($review->status, $this->project->getTagIdsByStatus('closed'))) ? 'issue-c' : 'issue-o';
-        return '<a href="'.Pluf_HTTP_URL_urlForView('IDF_Views_Review::view', 
+        return '<a href="'.Pluf_HTTP_URL_urlForView('IDF_Views_Review::view',
                                                     array($this->project->shortname, $review->id)).$anchor.'" class="'.$ic.'" title="'.Pluf_esc($review->summary).'">'.Pluf_esc($title).'</a>';
     }
 }

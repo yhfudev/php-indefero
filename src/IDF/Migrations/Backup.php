@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ function IDF_Migrations_Backup_run($folder, $name=null)
 {
     $models = array(
                     'IDF_Project',
+                    'IDF_ProjectActivity',
                     'IDF_Tag',
                     'IDF_Issue',
                     'IDF_IssueComment',
@@ -43,8 +44,10 @@ function IDF_Migrations_Backup_run($folder, $name=null)
                     'IDF_IssueFile',
                     'IDF_Commit',
                     'IDF_Timeline',
-                    'IDF_WikiPage',
-                    'IDF_WikiRevision',
+                    'IDF_Wiki_Page',
+                    'IDF_Wiki_PageRevision',
+                    'IDF_Wiki_Resource',
+                    'IDF_Wiki_ResourceRevision',
                     'IDF_Review',
                     'IDF_Review_Patch',
                     'IDF_Review_Comment',
@@ -53,6 +56,8 @@ function IDF_Migrations_Backup_run($folder, $name=null)
                     'IDF_Scm_Cache_Git',
                     'IDF_Queue',
                     'IDF_Gconf',
+                    'IDF_EmailAddress',
+                    'IDF_IssueRelation',
                     );
     $db = Pluf::db();
     // Now, for each table, we dump the content in json, this is a
@@ -79,6 +84,7 @@ function IDF_Migrations_Backup_restore($folder, $name)
 {
     $models = array(
                     'IDF_Project',
+                    'IDF_ProjectActivity',
                     'IDF_Tag',
                     'IDF_Issue',
                     'IDF_IssueComment',
@@ -88,8 +94,10 @@ function IDF_Migrations_Backup_restore($folder, $name)
                     'IDF_IssueFile',
                     'IDF_Commit',
                     'IDF_Timeline',
-                    'IDF_WikiPage',
-                    'IDF_WikiRevision',
+                    'IDF_Wiki_Resource',
+                    'IDF_Wiki_ResourceRevision',
+                    'IDF_Wiki_Page',
+                    'IDF_Wiki_PageRevision',
                     'IDF_Review',
                     'IDF_Review_Patch',
                     'IDF_Review_Comment',
@@ -98,6 +106,8 @@ function IDF_Migrations_Backup_restore($folder, $name)
                     'IDF_Scm_Cache_Git',
                     'IDF_Queue',
                     'IDF_Gconf',
+                    'IDF_EmailAddress',
+                    'IDF_IssueRelation',
                     );
     $db = Pluf::db();
     $schema = new Pluf_DB_Schema($db);
@@ -108,6 +118,10 @@ function IDF_Migrations_Backup_restore($folder, $name)
     $full_data = json_decode(file_get_contents(sprintf('%s/%s-IDF.json', $folder, $name)), true);
     foreach ($full_data as $model => $data) {
         Pluf_Test_Fixture::load($data, false);
+    }
+    foreach ($models as $model) {
+        $schema->model = new $model();
+        $schema->createConstraints();
     }
     return true;
 }

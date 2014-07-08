@@ -1,30 +1,52 @@
-InDefero was originally created during summer 2008 
+InDefero was originally created during summer 2008
 by Loïc d'Anterroches with the support of Céondo Ltd.
 
-Much appreciated contributors:
+Much appreciated contributors (in alphabetical order):
 
-    Nicolas Lassalle <http://www.beroot.org/> - Subversion support
-    bohwaz <http://bohwaz.net/>
-    Benjamin Jorand <benjamin.jorand@gmail.com> - Mercurial support
-    Baptiste Michaud <bactisme@gmail.com> - Subversion synchronization
-    Julien Issler 
+    Adrien Bustany <madcat@mymadcat.com>
+    Andrew Nguyen <andrew-git-indefero@na-consulting.net>
+    Baptiste Durand-Bret <bathizte@ozazar.org>
+    Baptiste Michaud <bactisme@gmail.com>           - Subversion sync
+    Benjamin Danon <benjamin@sphax3d.org>           - French translation
+    Benjamin Jorand <benjamin.jorand@gmail.com>     - Mercurial support
+    Brenda Wallace <shiny@cpan.org>
+    Brian Armstrong <brianar>
+    Charles Melbye <charlie@yourwiki.net>
+    Ciaran Gultnieks <ciaran@ciarang.com>
+    Daniel Steudler <steudlerdaniel@gmail.com>
+    David Feeney <davidf>
+    Denis Kot <denis.kot@gmail.com>                 - Russian translation
+    Dmitry Dulepov <dmitryd>
+    Fernando Sayago Gil <mikados.mikados@gmail.com> - Spanish translation
+    Gert van Valkenhoef <gertvv>
+    Jakub Viták <mainiak@gmail.com>                 - Czech translation
+    Janez Troha <http://www.dz0ny.info>             - Slovenian translation
+    Jean-Philippe Fleury <jpfleury>
+    Jerry <lxb429@gmail.com>                        - Chinese translation
+    Jonathan Aillet <jonathan.aillet@gmail.com>     - French translation
+    Julien Issler <julien@issler.net>
+    Litew <litew9@gmail.com>                        - Russian translation
+    Ludovic Bellière <xrogaan>
     Manuel Eidenberger <eidenberger@gmail.com>
-    Ciaran Gultnieks
+    Matthew Dawson <mjd>
+    Matías Halles <matias@halles.cl>
     Mehdi Kabab <http://pioupioum.fr/>
-    Sindre R. Myren
+    Nicolas Lassalle <nicolas@beroot.org>           - Subversion support
+    Ozan <uobasar@gmail.com>                        - Turkish translation
     Patrick Georgi <patrick.georgi@coresystems.de>
-    Adrien Bustany
-    Charles Melbye
-    Baptiste Durand-Bret
-    Andrew Nguyen
-    David Feeney
-    Denis Kot <denis.kot@gmail.com>
-    Samuel Suther
-    Ludovic Bellière
-    Brian Armstrong
-    Raphaël Emourgeon
-    Jakub Viták
-    Vladimir Solomatin
+    Pedro Kiefer <pedro@kiefer.com.br>              - Brazilian Portuguese translation
+    Raphaël Emourgeon <raphael>
+    Samuel Suther <info@suther.de>                  - German translation
+    Simon Holywell <treffynnon@php.net>
+    Sindre R. Myren <sindrero@stud.ntnu.no>
+    Stewart Platt <stew@futurete.ch>
+    Stéphane Baron <sbaron>
+    Thomas Keller <me@thomaskeller.biz>             - Monotone support
+    Victor Quinault <victor.quinault@gmail.com>     - French translation
+    Vladimir Solomatin <slash>
+    William Martin <william.martin@lcpc.fr>
+    Xavier Brochard <xavier@alternatif.org>
+    bohwaz <http://bohwaz.net/>
 
 And all the nice users who spent time reporting issues and promoting
 the project. The project could not live without them.

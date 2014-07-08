@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,14 +22,14 @@
 # ***** END LICENSE BLOCK ***** */
 
 /**
- * Add the download of files.
+ * Add wiki functionality.
  */
 
 function IDF_Migrations_7Wiki_up($params=null)
 {
     $models = array(
-                    'IDF_WikiPage',
-                    'IDF_WikiRevision',
+                    'IDF_Wiki_Page',
+                    'IDF_Wiki_PageRevision',
                     );
     $db = Pluf::db();
     $schema = new Pluf_DB_Schema($db);
@@ -42,8 +42,8 @@ function IDF_Migrations_7Wiki_up($params=null)
 function IDF_Migrations_7Wiki_down($params=null)
 {
     $models = array(
-                    'IDF_WikiRevision',
-                    'IDF_WikiPage',
+                    'IDF_Wiki_PageRevision',
+                    'IDF_Wiki_Page',
                     );
     $db = Pluf::db();
     $schema = new Pluf_DB_Schema($db);

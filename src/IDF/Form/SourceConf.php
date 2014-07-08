@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,13 +49,10 @@ class IDF_Form_SourceConf extends Pluf_Form
                           'widget' => 'Pluf_Form_Widget_PasswordInput',
                           ));
         }
-        Pluf::loadFunction('Pluf_HTTP_URL_urlForView');
-        $url = Pluf_HTTP_URL_urlForView('idf_faq').'#webhooks';
         $this->fields['webhook_url'] = new Pluf_Form_Field_Url(
                     array('required' => false,
                           'label' => __('Webhook URL'),
                           'initial' => $this->conf->getVal('webhook_url', ''),
-                          'help_text' => sprintf(__('Learn more about the <a href="%s">post-commit web hooks</a>.'), $url),
                           'widget_attrs' => array('size' => 35),
                           ));
 

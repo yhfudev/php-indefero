@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,20 +57,44 @@ class IDF_Form_TabsConf extends Pluf_Form
                                             'widget' => 'Pluf_Form_Widget_SelectInput',
                                             ));
         }
-        $ak = array('downloads_notification_email',
-                    'review_notification_email',
-                    'wiki_notification_email',
-                    'source_notification_email',
-                    'issues_notification_email',);
-        foreach ($ak as $key) {
-            $this->fields[$key] = new IDF_Form_Field_EmailList(
-                                      array('required' => false,
-                                            'label' => $key,
-                                            'initial' => $this->conf->getVal($key, ''),
-                                            'widget_attrs' => array('size' => 40),
-                                            ));
-        }
 
+        $sections = array(
+            'downloads_notification',
+            'review_notification',
+            'wiki_notification',
+            'source_notification',
+            'issues_notification',
+        );
+
+        foreach ($sections as $section) {
+            $this->fields[$section.'_owners_enabled'] = new Pluf_Form_Field_Boolean(
+                array('required' => false,
+                      'label' => __('Project owners'),
+                      'initial' => $this->conf->getVal($section.'_owners_enabled', false),
+                      'widget' => 'Pluf_Form_Widget_CheckboxInput',
+                      ));
+            $this->fields[$section.'_members_enabled'] = new Pluf_Form_Field_Boolean(
+                array('required' => false,
+                      'label' => __('Project members'),
+                      'initial' => $this->conf->getVal($section.'_members_enabled', false),
+                      'widget' => 'Pluf_Form_Widget_CheckboxInput',
+                      ));
+            $this->fields[$section.'_email_enabled'] = new Pluf_Form_Field_Boolean(
+                array('required' => false,
+                      'label' => __('Others'),
+                      'initial' => $this->conf->getVal($section.'_email_enabled', false),
+                      'widget' => 'Pluf_Form_Widget_CheckboxInput',
+                      ));
+            if ($this->conf->getVal($section.'_email_enabled', false)) {
+                $attrs['readonly'] = 'readonly';
+            }
+            $this->fields[$section.'_email'] = new IDF_Form_Field_EmailList(
+                array('required' => false,
+                      'label' => null,
+                      'initial' => $this->conf->getVal($section.'_email', ''),
+                      'widget_attrs' => array('size' => 20),
+                      ));
+        }
 
         $this->fields['private_project'] = new Pluf_Form_Field_Boolean(
                     array('required' => false,

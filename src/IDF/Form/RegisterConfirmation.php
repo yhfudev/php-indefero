@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ class IDF_Form_RegisterConfirmation extends Pluf_Form
                                             'label' => __('Your password'),
                                             'initial' => '',
                                             'widget' => 'Pluf_Form_Widget_PasswordInput',
-                                            'help_text' => __('Your password must be hard for other people to find it, but easy for you to remember.'),
+                                            'help_text' => __('Your password must be hard for other people to guess, but easy for you to remember.'),
                                             'widget_attrs' => array(
                                                        'maxlength' => 50,
                                                        'size' => 15,
@@ -107,7 +107,7 @@ class IDF_Form_RegisterConfirmation extends Pluf_Form
             throw new Pluf_Form_Invalid($error);
         }
         if ($users[0]->active) {
-            throw new Pluf_Form_Invalid(__('This account has already been confirmed. Maybe should you try to recover your password using the help link.'));
+            throw new Pluf_Form_Invalid(sprintf(__('This account has already been confirmed. Maybe should you try to <a href="%s">recover your password</a>.'), Pluf_HTTP_URL_urlForView('IDF_Views::passwordRecoveryAsk')));
         }
         $this->_user_id = $email_id[1];
         return $this->cleaned_data['key'];

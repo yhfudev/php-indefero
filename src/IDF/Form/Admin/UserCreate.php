@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ class IDF_Form_Admin_UserCreate extends Pluf_Form
                                       array('required' => true,
                                             'label' => __('Email'),
                                             'initial' => '',
-                                            'help_text' => __('Double check the email address as the password is directly sent to the user.'),
+                                            'help_text' => __('Double check the email address as the password is sent directly to the user.'),
                                             ));
 
         $this->fields['language'] = new Pluf_Form_Field_Varchar(

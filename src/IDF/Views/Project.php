@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,25 @@ class IDF_Views_Project
     /**
      * Home page of a project.
      */
+    public $logo_precond = array('IDF_Precondition::baseAccess');
+    public function logo($request, $match)
+    {
+        $prj = $request->project;
+
+        $logo = $prj->getConf()->getVal('logo');
+        if (empty($logo)) {
+            $url = Pluf::f('url_media') . '/idf/img/no_logo.png';
+            return new Pluf_HTTP_Response_Redirect($url);
+        }
+
+        $info = IDF_FileUtil::getMimeType($logo);
+        return new Pluf_HTTP_Response_File(Pluf::f('upload_path') . '/' . $prj->shortname . $logo,
+                                           $info[0]);
+    }
+
+    /**
+     * Home page of a project.
+     */
     public $home_precond = array('IDF_Precondition::baseAccess');
     public function home($request, $match)
     {
@@ -49,7 +68,7 @@ class IDF_Views_Project
         $pages = array();
         if ($request->rights['hasWikiAccess']) {
             $tags = IDF_Views_Wiki::getWikiTags($prj);
-            $pages = $tags[0]->get_idf_wikipage_list();
+            $pages = $tags[0]->get_idf_wiki_page_list();
         }
         return Pluf_Shortcuts_RenderToResponse('idf/project/home.html',
                                                array(
@@ -62,20 +81,26 @@ class IDF_Views_Project
     }
 
     /**
-     * Returns an associative array with available model filters
+     * Returns an associative array with all accessible model filters
      *
      * @return array
      */
-    private static function getAvailableModelFilters()
+    private static function getAccessibleModelFilters($request)
     {
-        return array(
-            'all'       => __('All Updates'),
-            'commits'   => __('Commits'),
-            'issues'    => __('Issues and Comments'),
-            'downloads' => __('Downloads'),
-            'documents' => __('Documents'),
-            'reviews'   => __('Reviews and Patches'),
-        );
+        $filters = array('all' => __('All Updates'));
+
+        if (true === IDF_Precondition::accessSource($request))
+            $filters['commits'] = __('Commits');
+        if (true === IDF_Precondition::accessIssues($request))
+            $filters['issues'] = __('Issues and Comments');
+        if (true === IDF_Precondition::accessDownloads($request))
+            $filters['downloads'] = __('Downloads');
+        if (true === IDF_Precondition::accessWiki($request))
+            $filters['documents'] = __('Documents');
+        if (true === IDF_Precondition::accessReview($request))
+            $filters['reviews'] = __('Reviews and Patches');
+
+        return $filters;
     }
 
     /**
@@ -106,8 +131,10 @@ class IDF_Views_Project
         }
         if (true === IDF_Precondition::accessWiki($request) &&
             ($model_filter == 'all' || $model_filter == 'documents')) {
-            $classes[] = '\'IDF_WikiPage\'';
-            $classes[] = '\'IDF_WikiRevision\'';
+            $classes[] = '\'IDF_Wiki_Page\'';
+            $classes[] = '\'IDF_Wiki_PageRevision\'';
+            $classes[] = '\'IDF_Wiki_Resource\'';
+            $classes[] = '\'IDF_Wiki_ResourceRevision\'';
         }
         if (true === IDF_Precondition::accessReview($request) &&
             ($model_filter == 'all' || $model_filter == 'reviews')) {
@@ -122,6 +149,17 @@ class IDF_Views_Project
     }
 
     /**
+     * This action serves as URI compatibility layer for v1.0.
+     *
+     * @deprecated
+     */
+    public function timelineCompat($request, $match)
+    {
+        $match[2] = 'all';
+        return $this->timeline($request, $match);
+    }
+
+    /**
      * Timeline of the project.
      */
     public $timeline_precond = array('IDF_Precondition::baseAccess');
@@ -130,11 +168,11 @@ class IDF_Views_Project
         $prj = $request->project;
 
         $model_filter = @$match[2];
-        $all_model_filters = self::getAvailableModelFilters();
-        if (!array_key_exists($model_filter, $all_model_filters)) {
+        $accessible_model_filters = self::getAccessibleModelFilters($request);
+        if (!array_key_exists($model_filter, $accessible_model_filters)) {
             $model_filter = 'all';
         }
-        $title = (string)$prj . ' ' . $all_model_filters[$model_filter];
+        $title = (string)$prj . ' ' . $accessible_model_filters[$model_filter];
 
         $pag = new IDF_Timeline_Paginator(new IDF_Timeline());
         $pag->class = 'recent-issues';
@@ -172,10 +210,21 @@ class IDF_Views_Project
                                                      'feedurl' => $feedurl,
                                                      'timeline' => $pag,
                                                      'model_filter' => $model_filter,
-                                                     'all_model_filters' => $all_model_filters,
+                                                     'accessible_model_filters' => $accessible_model_filters,
                                                      ),
                                                $request);
 
+    }
+
+    /**
+     * This action serves as URI compatibility layer for v1.0.
+     *
+     * @deprecated
+     */
+    public function timelineFeedCompat($request, $match)
+    {
+        $match[2] = 'all';
+        return $this->timelineFeed($request, $match);
     }
 
     /**
@@ -192,12 +241,11 @@ class IDF_Views_Project
         $prj = $request->project;
         $model_filter = @$match[2];
 
-        $model_filter = @$match[2];
-        $all_model_filters = self::getAvailableModelFilters();
-        if (!array_key_exists($model_filter, $all_model_filters)) {
+        $accessible_model_filters = self::getAccessibleModelFilters($request);
+        if (!array_key_exists($model_filter, $accessible_model_filters)) {
             $model_filter = 'all';
         }
-        $title = $all_model_filters[$model_filter];
+        $title = $accessible_model_filters[$model_filter];
 
         $classes = self::determineModelClasses($request, $model_filter);
         $sqls = sprintf('model_class IN (%s)', implode(', ', $classes));
@@ -225,7 +273,7 @@ class IDF_Views_Project
         $tmpl = new Pluf_Template('idf/index.atom');
         $feedurl = Pluf::f('url_base').Pluf::f('idf_base').$request->query;
         $viewurl = Pluf_HTTP_URL_urlForView('IDF_Views_Project::timeline',
-                                            array($prj->shortname));
+                                            array($prj->shortname, $model_filter));
         $context = new Pluf_Template_Context_Request($request,
                                                      array('body' => $out,
                                                            'date' => $date,
@@ -246,30 +294,34 @@ class IDF_Views_Project
     {
         $prj = $request->project;
         $title = sprintf(__('%s Project Summary'), (string) $prj);
-        $form_fields = array('fields'=> array('name', 'shortdesc',
-                                              'description'));
+        $extra = array('project' => $prj);
         if ($request->method == 'POST') {
-            $form = Pluf_Shortcuts_GetFormForModel($prj, $request->POST,
-                                                   $form_fields);
+            $form = new IDF_Form_ProjectConf(array_merge($request->POST,
+                                                         $request->FILES),
+                                             $extra);
             if ($form->isValid()) {
-                $prj = $form->save();
+                $form->save();
                 $request->user->setMessage(__('The project has been updated.'));
                 $url = Pluf_HTTP_URL_urlForView('IDF_Views_Project::admin',
                                                 array($prj->shortname));
                 return new Pluf_HTTP_Response_Redirect($url);
             }
         } else {
-            $form = Pluf_Shortcuts_GetFormForModel($prj, $prj->getData(),
-                                                   $form_fields);
+            $form = new IDF_Form_ProjectConf(null, $extra);
         }
-        $form->fields['description']->widget->attrs['cols'] = 68;
-        $form->fields['description']->widget->attrs['rows'] = 26;
-        $form->fields['shortdesc']->widget->attrs['size'] = 67;
+
+        $logo = $prj->getConf()->getVal('logo');
+        $arrays = self::autoCompleteArrays();
         return Pluf_Shortcuts_RenderToResponse('idf/admin/summary.html',
-                                               array(
-                                                     'page_title' => $title,
-                                                     'form' => $form,
-                                                     ),
+                                               array_merge(
+                                                   array(
+                                                         'page_title' => $title,
+                                                         'form' => $form,
+                                                         'project' => $prj,
+                                                         'logo' => $logo,
+                                                         ),
+                                                   $arrays
+                                               ),
                                                $request);
     }
 
@@ -298,7 +350,8 @@ class IDF_Views_Project
             $params = array();
             $keys = array('labels_issue_template',
                           'labels_issue_open', 'labels_issue_closed',
-                          'labels_issue_predefined', 'labels_issue_one_max');
+                          'labels_issue_predefined', 'labels_issue_one_max',
+                          'issue_relations');
             foreach ($keys as $key) {
                 $_val = $conf->getVal($key, false);
                 if ($_val !== false) {
@@ -328,8 +381,11 @@ class IDF_Views_Project
         $title = sprintf(__('%s Downloads Configuration'), (string) $prj);
         $conf = new IDF_Conf();
         $conf->setProject($prj);
+        $extra = array(
+            'conf' => $conf,
+        );
         if ($request->method == 'POST') {
-            $form = new IDF_Form_UploadConf($request->POST);
+            $form = new IDF_Form_UploadConf($request->POST, $extra);
             if ($form->isValid()) {
                 foreach ($form->cleaned_data as $key=>$val) {
                     $conf->setVal($key, $val);
@@ -341,7 +397,7 @@ class IDF_Views_Project
             }
         } else {
             $params = array();
-            $keys = array('labels_download_predefined', 'labels_download_one_max');
+            $keys = array('labels_download_predefined', 'labels_download_one_max', 'upload_webhook_url');
             foreach ($keys as $key) {
                 $_val = $conf->getVal($key, false);
                 if ($_val !== false) {
@@ -351,12 +407,13 @@ class IDF_Views_Project
             if (count($params) == 0) {
                 $params = null; //Nothing in the db, so new form.
             }
-            $form = new IDF_Form_UploadConf($params);
+            $form = new IDF_Form_UploadConf($params, $extra);
         }
         return Pluf_Shortcuts_RenderToResponse('idf/admin/downloads.html',
                                                array(
                                                      'page_title' => $title,
                                                      'form' => $form,
+                                                     'hookkey' => $prj->getWebHookKey(),
                                                      ),
                                                $request);
     }
@@ -457,21 +514,24 @@ class IDF_Views_Project
                     }
                 }
                 $form->save(); // Save the authorized users.
-                $request->user->setMessage(__('The project tabs access rights have been saved.'));
+                $request->user->setMessage(__('The project tabs access rights and notification settings have been saved.'));
                 $url = Pluf_HTTP_URL_urlForView('IDF_Views_Project::adminTabs',
                                                 array($prj->shortname));
                 return new Pluf_HTTP_Response_Redirect($url);
             }
         } else {
             $params = array();
-            $keys = array('downloads_access_rights', 'source_access_rights',
-                          'issues_access_rights', 'review_access_rights',
-                          'wiki_access_rights',
-                          'downloads_notification_email',
-                          'review_notification_email',
-                          'wiki_notification_email',
-                          'source_notification_email',
-                          'issues_notification_email');
+            $sections = array('downloads', 'wiki', 'source', 'issues', 'review');
+            $keys = array();
+
+            foreach ($sections as $section) {
+                $keys[] = $section.'_access_rights';
+                $keys[] = $section.'_notification_owners_enabled';
+                $keys[] = $section.'_notification_members_enabled';
+                $keys[] = $section.'_notification_email_enabled';
+                $keys[] = $section.'_notification_email';
+            }
+
             foreach ($keys as $key) {
                 $_val = $request->conf->getVal($key, false);
                 if ($_val !== false) {
@@ -543,6 +603,10 @@ class IDF_Views_Project
                          'mtn' => __('monotone'),
                          );
         $repository_type = $options[$scm];
+        $hook_request_method = 'PUT';
+        if (Pluf::f('webhook_processing','') === 'compat') {
+            $hook_request_method = 'POST';
+        }
         return Pluf_Shortcuts_RenderToResponse('idf/admin/source.html',
                                                array(
                                                      'remote_svn' => $remote_svn,
@@ -551,8 +615,41 @@ class IDF_Views_Project
                                                      'repository_size' => $prj->getRepositorySize(),
                                                      'page_title' => $title,
                                                      'form' => $form,
-                                                     'hookkey' => $prj->getPostCommitHookKey(),
+                                                     'hookkey' => $prj->getWebHookKey(),
+                                                     'hook_request_method' => $hook_request_method,
                                                      ),
                                                $request);
+    }
+
+    /**
+     * Create the autocomplete arrays for the little AJAX stuff.
+     */
+    public static function autoCompleteArrays()
+    {
+        $forge = IDF_Forge::instance();
+        $labels = $forge->getProjectLabels(IDF_Form_Admin_LabelConf::init_project_labels);
+
+        $auto = array('auto_labels' => '');
+        $auto_raw = array('auto_labels' => $labels);
+        foreach ($auto_raw as $key => $st) {
+            $st = preg_split("/\015\012|\015|\012/", $st, -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($st as $s) {
+                $v = '';
+                $d = '';
+                $_s = explode('=', $s, 2);
+                if (count($_s) > 1) {
+                    $v = trim($_s[0]);
+                    $d = trim($_s[1]);
+                } else {
+                    $v = trim($_s[0]);
+                }
+                $auto[$key] .= sprintf('{ name: "%s", to: "%s" }, ',
+                Pluf_esc($d),
+                Pluf_esc($v));
+            }
+            $auto[$key] = substr($auto[$key], 0, -2);
+        }
+
+        return $auto;
     }
 }

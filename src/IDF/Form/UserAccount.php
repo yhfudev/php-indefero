@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ class IDF_Form_UserAccount  extends Pluf_Form
 
         $this->fields['email'] = new Pluf_Form_Field_Email(
                                       array('required' => true,
-                                            'label' => __('Your mail'),
+                                            'label' => __('Your email'),
                                             'initial' => $this->user->email,
                                             'help_text' => __('If you change your email address, an email will be sent to the new address to confirm it.'),
                                             ));
@@ -79,6 +79,7 @@ class IDF_Form_UserAccount  extends Pluf_Form
                                             'widget' => 'Pluf_Form_Widget_PasswordInput',
                                             'help_text' => Pluf_Template::markSafe(__('Leave blank if you do not want to change your password.').'<br />'.__('Your password must be hard for other people to find it, but easy for you to remember.')),
                                             'widget_attrs' => array(
+                                                       'autocomplete' => 'off',
                                                        'maxlength' => 50,
                                                        'size' => 15,
                                                                     ),
@@ -89,6 +90,7 @@ class IDF_Form_UserAccount  extends Pluf_Form
                                             'initial' => '',
                                             'widget' => 'Pluf_Form_Widget_PasswordInput',
                                             'widget_attrs' => array(
+                                                       'autocomplete' => 'off',
                                                        'maxlength' => 50,
                                                        'size' => 15,
                                                                     ),
@@ -161,8 +163,44 @@ class IDF_Form_UserAccount  extends Pluf_Form
                                             'widget_attrs' => array('rows' => 3,
                                                                     'cols' => 40),
                                             'widget' => 'Pluf_Form_Widget_TextareaInput',
-                                            'help_text' => __('Paste a SSH or monotone public key. Be careful to not provide your private key here!')
+                                            'help_text' => __('Paste an SSH or monotone public key. Be careful to not provide your private key here!')
                                             ));
+
+        $this->fields['secondary_mail'] = new Pluf_Form_Field_Email(
+                                      array('required' => false,
+                                            'label' => __('Add a secondary email address'),
+                                            'initial' => '',
+                                            'help_text' => __('You will get an email to confirm that you own the address you specify.'),
+                                            ));
+    }
+
+    private function send_validation_mail($new_email, $secondary_mail=false)
+    {
+        if ($secondary_mail) {
+            $type = "secondary";
+        } else {
+            $type = "primary";
+        }
+        $cr = new Pluf_Crypt(md5(Pluf::f('secret_key')));
+        $encrypted = trim($cr->encrypt($new_email.':'.$this->user->id.':'.time().':'.$type), '~');
+        $key = substr(md5(Pluf::f('secret_key').$encrypted), 0, 2).$encrypted;
+        $url = Pluf::f('url_base').Pluf_HTTP_URL_urlForView('IDF_Views_User::changeEmailDo', array($key), array(), false);
+        $urlik = Pluf::f('url_base').Pluf_HTTP_URL_urlForView('IDF_Views_User::changeEmailInputKey', array(), array(), false);
+        $context = new Pluf_Template_Context(
+             array('key' => Pluf_Template::markSafe($key),
+                   'url' => Pluf_Template::markSafe($url),
+                   'urlik' => Pluf_Template::markSafe($urlik),
+                   'email' => $new_email,
+                   'user'=> $this->user,
+                   )
+        );
+        $tmpl = new Pluf_Template('idf/user/changeemail-email.txt');
+        $text_email = $tmpl->render($context);
+        $email = new Pluf_Mail(Pluf::f('from_email'), $new_email,
+                               __('Confirm your new email address.'));
+        $email->addTextMessage($text_email);
+        $email->sendMail();
+        $this->user->setMessage(sprintf(__('A validation email has been sent to "%s" to validate the email address change.'), Pluf_esc($new_email)));
     }
 
     /**
@@ -188,26 +226,7 @@ class IDF_Form_UserAccount  extends Pluf_Form
         $new_email = $this->cleaned_data['email'];
         unset($this->cleaned_data['email']);
         if ($old_email != $new_email) {
-            $cr = new Pluf_Crypt(md5(Pluf::f('secret_key')));
-            $encrypted = trim($cr->encrypt($new_email.':'.$this->user->id.':'.time()), '~');
-            $key = substr(md5(Pluf::f('secret_key').$encrypted), 0, 2).$encrypted;
-            $url = Pluf::f('url_base').Pluf_HTTP_URL_urlForView('IDF_Views_User::changeEmailDo', array($key), array(), false);
-            $urlik = Pluf::f('url_base').Pluf_HTTP_URL_urlForView('IDF_Views_User::changeEmailInputKey', array(), array(), false);
-            $context = new Pluf_Template_Context(
-                 array('key' => Pluf_Template::markSafe($key),
-                       'url' => Pluf_Template::markSafe($url),
-                       'urlik' => Pluf_Template::markSafe($urlik),
-                       'email' => $new_email,
-                       'user'=> $this->user,
-                       )
-            );
-            $tmpl = new Pluf_Template('idf/user/changeemail-email.txt');
-            $text_email = $tmpl->render($context);
-            $email = new Pluf_Mail(Pluf::f('from_email'), $new_email,
-                                   __('Confirm your new email address.'));
-            $email->addTextMessage($text_email);
-            $email->sendMail();
-            $this->user->setMessage(sprintf(__('A validation email has been sent to "%s" to validate the email address change.'), Pluf_esc($new_email)));
+            $this->send_validation_mail($new_email);
         }
         $this->user->setFromFormData($this->cleaned_data);
         // Add key as needed.
@@ -218,6 +237,9 @@ class IDF_Form_UserAccount  extends Pluf_Form
             if ($commit) {
                 $key->create();
             }
+        }
+        if ('' !== $this->cleaned_data['secondary_mail']) {
+            $this->send_validation_mail($this->cleaned_data['secondary_mail'], true);
         }
 
         if ($commit) {
@@ -295,8 +317,15 @@ class IDF_Form_UserAccount  extends Pluf_Form
             return '';
         }
 
-        if (preg_match('#^ssh\-[a-z]{3}\s\S+(\s\S+)?$#', $key)) {
-            $key = str_replace(array("\n", "\r"), '', $key);
+        $keysearch = '';
+        if (preg_match('#^(ssh\-(?:dss|rsa)\s+\S+)(.*)#', $key, $m)) {
+            $basekey = preg_replace('/\s+/', ' ', $m[1]);
+            $comment = trim(preg_replace('/[\r\n]/', ' ', $m[2]));
+           
+            $keysearch = $basekey.'%';
+            $key = $basekey;
+            if (!empty($comment))
+                $key .= ' '.$comment;
 
             if (Pluf::f('idf_strong_key_check', false)) {
 
@@ -315,7 +344,9 @@ class IDF_Form_UserAccount  extends Pluf_Form
                 }
             }
         }
-        else if (preg_match('#^\[pubkey [^\]]+\]\s*\S+\s*\[end\]$#', $key)) {
+        else if (preg_match('#^\[pubkey [^\]]+\]\s*(\S+)\s*\[end\]$#', $key, $m)) {
+            $keysearch = '%'.$m[1].'%';
+            
             if (Pluf::f('idf_strong_key_check', false)) {
 
                 // if monotone can read it, it should be valid
@@ -337,7 +368,7 @@ class IDF_Form_UserAccount  extends Pluf_Form
         }
         else {
             throw new Pluf_Form_Invalid(
-                __('Public key looks neither like a SSH '.
+                __('Public key looks like neither an SSH '.
                    'nor monotone public key.'));
         }
 
@@ -345,7 +376,7 @@ class IDF_Form_UserAccount  extends Pluf_Form
         if ($user) {
             $ruser = Pluf::factory('Pluf_User', $user);
             if ($ruser->id > 0) {
-                $sql = new Pluf_SQL('content=%s', array($key));
+                $sql = new Pluf_SQL('content LIKE %s AND user=%s', array($keysearch, $ruser->id));
                 $keys = Pluf::factory('IDF_Key')->getList(array('filter' => $sql->gen()));
                 if (count($keys) > 0) {
                     throw new Pluf_Form_Invalid(
@@ -393,13 +424,20 @@ class IDF_Form_UserAccount  extends Pluf_Form
     function clean_email()
     {
         $this->cleaned_data['email'] = mb_strtolower(trim($this->cleaned_data['email']));
-        $guser = new Pluf_User();
-        $sql = new Pluf_SQL('email=%s AND id!=%s',
-                            array($this->cleaned_data['email'], $this->user->id));
-        if ($guser->getCount(array('filter' => $sql->gen())) > 0) {
+        $user = Pluf::factory('IDF_EmailAddress')->get_user_for_email_address($this->cleaned_data['email']);
+        if ($user != null and $user->id != $this->user->id) {
             throw new Pluf_Form_Invalid(sprintf(__('The email "%s" is already used.'), $this->cleaned_data['email']));
         }
         return $this->cleaned_data['email'];
+    }
+
+    function clean_secondary_mail()
+    {
+        $this->cleaned_data['secondary_mail'] = mb_strtolower(trim($this->cleaned_data['secondary_mail']));
+        if (Pluf::factory('IDF_EmailAddress')->get_user_for_email_address($this->cleaned_data['secondary_mail']) != null) {
+            throw new Pluf_Form_Invalid(sprintf(__('The email "%s" is already used.'), $this->cleaned_data['secondary_mail']));
+        }
+        return $this->cleaned_data['secondary_mail'];
     }
 
     function clean_public_key()

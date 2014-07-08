@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,6 +72,13 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
                                             'widget_attrs' => array('size' => '35'),
                                             ));
 
+        $this->fields['external_project_url'] = new Pluf_Form_Field_Varchar(
+                                    array('required' => false,
+                                          'label' => __('External URL'),
+                                          'widget_attrs' => array('size' => '35'),
+                                          'initial' => '',
+        ));
+
         $this->fields['scm'] = new Pluf_Form_Field_Varchar(
                     array('required' => true,
                           'label' => __('Repository type'),
@@ -126,6 +133,18 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
                                                                     'cols' => 40),
                                             'widget' => 'Pluf_Form_Widget_TextareaInput',
                                             ));
+
+        for ($i=1;$i<7;$i++) {
+            $this->fields['label'.$i] = new Pluf_Form_Field_Varchar(
+                                            array('required' => false,
+                                                  'label' => __('Labels'),
+                                                  'initial' => '',
+                                                  'widget_attrs' => array(
+                                                  'maxlength' => 50,
+                                                  'size' => 20,
+                                                ),
+            ));
+        }
 
         $projects = array('--' => '--');
         foreach (Pluf::factory('IDF_Project')->getList(array('order' => 'name ASC')) as $proj) {
@@ -182,7 +201,7 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
         // we accept only starting with http(s):// to avoid people
         // trying to access the local filesystem.
         if (!preg_match('#^(http|https)://#', $url)) {
-            throw new Pluf_Form_Invalid(__('Only a remote repository available throught http or https are allowed. For example "http://somewhere.com/svn/trunk".'));
+            throw new Pluf_Form_Invalid(__('Only a remote repository available through HTTP or HTTPS is allowed. For example "http://somewhere.com/svn/trunk".'));
         }
         return $url;
     }
@@ -199,7 +218,7 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
                         $mtn_master_branch)) {
             throw new Pluf_Form_Invalid(__(
                 'The master branch is empty or contains illegal characters, '.
-                'please use only letters, digits, dashs and dots as separators.'
+                'please use only letters, digits, dashes and dots as separators.'
             ));
         }
 
@@ -233,6 +252,11 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
             throw new Pluf_Form_Invalid(__('This shortname is already used. Please select another one.'));
         }
         return $shortname;
+    }
+
+    public function clean_external_project_url()
+    {
+        return IDF_Form_ProjectConf::checkWebURL($this->cleaned_data['external_project_url']);
     }
 
     public function clean()
@@ -278,11 +302,29 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
         if (!$this->isValid()) {
             throw new Exception(__('Cannot save the model from an invalid form.'));
         }
+
+        // Add a tag for each label
+        $tagids = array();
+        for ($i=1;$i<7;$i++) {
+            if (strlen($this->cleaned_data['label'.$i]) > 0) {
+                if (strpos($this->cleaned_data['label'.$i], ':') !== false) {
+                    list($class, $name) = explode(':', $this->cleaned_data['label'.$i], 2);
+                    list($class, $name) = array(trim($class), trim($name));
+                } else {
+                    $class = 'Other';
+                    $name = trim($this->cleaned_data['label'.$i]);
+                }
+                $tag = IDF_Tag::addGlobal($name, $class);
+                $tagids[] = $tag->id;
+            }
+        }
+
         $project = new IDF_Project();
         $project->name = $this->cleaned_data['name'];
         $project->shortname = $this->cleaned_data['shortname'];
         $project->shortdesc = $this->cleaned_data['shortdesc'];
 
+        $tagids = array();
         if ($this->cleaned_data['template'] != '--') {
             // Find the template project
             $sql = new Pluf_SQL('shortname=%s',
@@ -290,50 +332,62 @@ class IDF_Form_Admin_ProjectCreate extends Pluf_Form
             $tmpl = Pluf::factory('IDF_Project')->getOne(array('filter' => $sql->gen()));
             $project->private = $tmpl->private;
             $project->description = $tmpl->description;
+
+            foreach ($tmpl->get_tags_list() as $tag) {
+                $tagids[] = $tag->id;
+            }
         } else {
             $project->private = $this->cleaned_data['private_project'];
             $project->description = __('Click on the Project Management tab to set the description of your project.');
+
+            // Add a tag for each label
+            for ($i=1;$i<7;$i++) {
+                if (strlen($this->cleaned_data['label'.$i]) > 0) {
+                    if (strpos($this->cleaned_data['label'.$i], ':') !== false) {
+                        list($class, $name) = explode(':', $this->cleaned_data['label'.$i], 2);
+                        list($class, $name) = array(trim($class), trim($name));
+                    } else {
+                        $class = 'Other';
+                        $name = trim($this->cleaned_data['label'.$i]);
+                    }
+                    $tag = IDF_Tag::addGlobal($name, $class);
+                    $tagids[] = $tag->id;
+                }
+            }
         }
         $project->create();
+        $project->batchAssoc('IDF_Tag', $tagids);
+
         $conf = new IDF_Conf();
         $conf->setProject($project);
-        $keys = array('scm', 'svn_remote_url', 'svn_username',
-                      'svn_password', 'mtn_master_branch');
-        foreach ($keys as $key) {
-            $this->cleaned_data[$key] = (!empty($this->cleaned_data[$key])) ?
-                $this->cleaned_data[$key] : '';
-            $conf->setVal($key, $this->cleaned_data[$key]);
-        }
+
         if ($this->cleaned_data['template'] != '--') {
             $tmplconf = new IDF_Conf();
             $tmplconf->setProject($tmpl);
-            // We need to get all the configuration variables we want from
-            // the old project and put them into the new project.
-            $props = array(
-                           'labels_download_predefined' => IDF_Form_UploadConf::init_predefined,
-                           'labels_download_one_max' => IDF_Form_UploadConf::init_one_max,
-                           'labels_wiki_predefined' => IDF_Form_WikiConf::init_predefined,
-                           'labels_wiki_one_max' => IDF_Form_WikiConf::init_one_max,
-                           'labels_issue_template' => IDF_Form_IssueTrackingConf::init_template,
-                           'labels_issue_open' => IDF_Form_IssueTrackingConf::init_open,
-                           'labels_issue_closed' => IDF_Form_IssueTrackingConf::init_closed,
-                           'labels_issue_predefined' =>  IDF_Form_IssueTrackingConf::init_predefined,
-                           'labels_issue_one_max' => IDF_Form_IssueTrackingConf::init_one_max,
-                           'webhook_url' => '',
-                           'downloads_access_rights' => 'all',
-                           'review_access_rights' => 'all',
-                           'wiki_access_rights' => 'all',
-                           'source_access_rights' => 'all',
-                           'issues_access_rights' => 'all',
-                           'downloads_notification_email' => '',
-                           'review_notification_email' => '',
-                           'wiki_notification_email' => '',
-                           'source_notification_email' => '',
-                           'issues_notification_email' => '',
-                           );
-            foreach ($props as $prop => $def) {
-                $conf->setVal($prop, $tmplconf->getVal($prop, $def));
+
+            $allKeys =  $tmplconf->getKeys();
+            $scm = $this->cleaned_data['scm'];
+            $ignoreKeys = array('scm', 'external_project_url', 'logo');
+
+            // copy over all existing variables, except scm-related data and
+            // the project url / logo
+            foreach ($allKeys as $key) {
+                if (in_array($key, $ignoreKeys) || strpos($key, $scm.'_') === 0) {
+                    continue;
+                }
+                $conf->setVal($key, $tmplconf->getVal($key));
             }
+        }
+
+        $keys = array(
+            'scm', 'svn_remote_url', 'svn_username',
+            'svn_password', 'mtn_master_branch',
+            'external_project_url'
+        );
+        foreach ($keys as $key) {
+            $this->cleaned_data[$key] = !empty($this->cleaned_data[$key]) ?
+                $this->cleaned_data[$key] : '';
+            $conf->setVal($key, $this->cleaned_data[$key]);
         }
         $project->created();
 

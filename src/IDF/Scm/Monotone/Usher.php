@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2010 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ class IDF_Scm_Monotone_Usher
         if ($conn == 'none')
             return array();
 
-        return preg_split('/[ ]/', $conn);
+        return preg_split('/[ ]/', $conn, -1, PREG_SPLIT_NO_EMPTY);
     }
 
     /**
@@ -73,10 +73,10 @@ class IDF_Scm_Monotone_Usher
         if ($conn == 'none')
             return array();
 
-        $single_conns = preg_split('/[ ]/', $conn);
+        $single_conns = preg_split('/[ ]/', $conn, -1, PREG_SPLIT_NO_EMPTY);
         $ret = array();
         foreach ($single_conns as $conn) {
-            preg_match('/\((\w+)\)([^:]+):(\d+)/', $conn, $matches);
+            preg_match('/\(([^)]+)\)([^:]+):(\d+)/', $conn, $matches);
             $ret[$matches[1]][] = (object)array(
                 'server'    => $matches[1],
                 'address'   => $matches[2],

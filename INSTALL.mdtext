@@ -4,6 +4,18 @@ The installation of InDefero is composed of 2 parts, first the
 installation of the [Pluf framework](http://www.pluf.org) and second,
 the installation of InDefero by itself.
 
+## PHP modules for indefero
+
+Indefero needs additional PHP modules to function correctly, namely
+
+ - gd (for graphic operations)
+ - zip (for upload archive processing)
+
+The package names of these modules might vary between distributions,
+for Debian they are
+
+    $ apt-get install php5-gd php5-zip
+
 ## Recommended Layout of the Files
 
 If your server document root is in `/var/www` a good thing is to keep
@@ -37,6 +49,7 @@ docroot.
     $ sudo pear upgrade-all
     $ sudo pear install --alldeps Mail
     $ sudo pear install --alldeps Mail_mime
+    $ sudo pear install --alldeps Console_Getopt
 
 If you already have some of the PEAR packages installed with your
 distribution, the `Mail` package is often not up-to-date, 
@@ -125,6 +138,7 @@ The documentation is available in the `doc` folder.
 * Subversion: `doc/syncsvn.mdtext`.
 * Mercurial: `doc/syncmercurial.mdtext`.
 * Git: `doc/syncgit.mdtext`.
+* Monotone: `doc/syncmonotone.mdtext`
 
 ## For the Apache Webserver Users
 

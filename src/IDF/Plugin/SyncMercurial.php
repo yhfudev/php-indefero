@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -178,7 +178,10 @@ class IDF_Plugin_SyncMercurial
 
         // Generate hgrc content 
         if (is_file($hgrc_file)) {
-            $tmp_content = parse_ini_file($hgrc_file, true);
+            $tmp_content = @parse_ini_file($hgrc_file, true, INI_SCANNER_RAW);
+            if ($tmp_content === false) {
+              throw new Exception('could not parse "'.$hgrc_file.'" because of syntax problems');
+            }
             $tmp_content['web']['allow_push'] = $allow_push;
         }
         else {

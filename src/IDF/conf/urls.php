@@ -3,7 +3,7 @@
 /*
 # ***** BEGIN LICENSE BLOCK *****
 # This file is part of InDefero, an open source project management application.
-# Copyright (C) 2008 Céondo Ltd and contributors.
+# Copyright (C) 2008-2011 Céondo Ltd and contributors.
 #
 # InDefero is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,16 @@ $ctl[] = array('regex' => '#^/$#',
                'base' => $base,
                'model' => 'IDF_Views',
                'method' => 'index');
+
+$ctl[] = array('regex' => '#^/projects/$#',
+               'base' => $base,
+               'model' => 'IDF_Views',
+               'method' => 'listProjects');
+
+$ctl[] = array('regex' => '#^/projects/label/(\w+)/(\w+)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views',
+               'method' => 'listProjectsByLabel');
 
 $ctl[] = array('regex' => '#^/login/$#',
                'base' => $base,
@@ -74,6 +84,11 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/$#',
                'model' => 'IDF_Views_Project',
                'method' => 'home');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/logo/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Project',
+               'method' => 'logo');
+
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/timeline/(\w+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Project',
@@ -91,15 +106,47 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/feed/timeline/(\w+)/token/(.*)/$#',
                'method' => 'timelineFeed',
                'name' => 'idf_project_timeline_feed_auth');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/timeline/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Project',
+               'method' => 'timelineCompat');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/feed/timeline/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Project',
+               'method' => 'timelineFeedCompat',
+               'name' => 'idf_project_timeline_feed');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/feed/timeline/token/(.*)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Project',
+               'method' => 'timelineFeedCompat',
+               'name' => 'idf_project_timeline_feed_auth');
+
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/$#',
                'base' => $base,
                'model' => 'IDF_Views_Issue',
                'method' => 'index');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/summary/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Issue',
+               'method' => 'summary');
+
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/search/$#',
                'base' => $base,
                'model' => 'IDF_Views_Issue',
                'method' => 'search');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/search/status/(\w+)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Issue',
+               'method' => 'searchStatus');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/search/label/(\d+)/(\w+)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Issue',
+               'method' => 'searchLabel');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/(\d+)/$#',
                'base' => $base,
@@ -126,10 +173,10 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/create/$#',
                'model' => 'IDF_Views_Issue',
                'method' => 'create');
 
-$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/my/(\w+)/$#',
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/(.*)/(\w+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Issue',
-               'method' => 'myIssues');
+               'method' => 'userIssues');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/attachment/(\d+)/(.*)$#',
                'base' => $base,
@@ -145,12 +192,17 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/watchlist/(\w+)$#',
                'base' => $base,
                'model' => 'IDF_Views_Issue',
                'method' => 'watchList');
-               
+
 $ctl[] = array('regex' => '#^/watchlist/(\w+)$#',
                'base' => $base,
                'model' => 'IDF_Views_Issue',
                'method' => 'forgeWatchList');
-         
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/issues/autocomplete/(\d*)$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Issue',
+               'method' => 'autoCompleteIssueList');
+
 // ---------- SCM ----------------------------------------
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/source/help/$#',
@@ -213,17 +265,32 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/source/changesrev/$#',
                'model' => 'IDF_Views_Source_Svn',
                'method' => 'changelogRev');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/source/repo/(.*)$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Source',
+               'method' => 'repository');
+
 // ---------- WIKI -----------------------------------------
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'index');
+               'method' => 'listPages');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/res/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'listResources');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/create/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'create');
+               'method' => 'createPage');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/res/create/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'createResource');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/search/$#',
                'base' => $base,
@@ -233,29 +300,59 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/search/$#',
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/label/(\d+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'listLabel');
+               'method' => 'listPagesWithLabel');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/update/(.*)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'update');
+               'method' => 'updatePage');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/res/update/(.*)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'updateResource');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/delrev/(\d+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'deleteRev');
+               'method' => 'deletePageRev');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/res/delrev/(\d+)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'deleteResourceRev');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/doc/delete/(\d+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'delete');
+               'method' => 'deletePage');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/res/delete/(\d+)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'deleteResource');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/res/raw/(.*)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'rawResource');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/page/(.*)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Wiki',
-               'method' => 'view');
+               'method' => 'viewPage');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/resource/(.*)/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Wiki',
+               'method' => 'viewResource');
 
 // ---------- Downloads ------------------------------------
+
+$ctl[] = array('regex' => '#^/help/archive-format/$#',
+               'base' => $base,
+               'model' => 'IDF_Views',
+               'method' => 'faqArchiveFormat');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/$#',
                'base' => $base,
@@ -272,15 +369,25 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/(\d+)/$#',
                'model' => 'IDF_Views_Download',
                'method' => 'view');
 
-$ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/(\d+)/get/$#',
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/get/(.+)$#',
                'base' => $base,
                'model' => 'IDF_Views_Download',
                'method' => 'download');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/(\d+)/get/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Download',
+               'method' => 'downloadById');
+
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/create/$#',
                'base' => $base,
                'model' => 'IDF_Views_Download',
-               'method' => 'submit');
+               'method' => 'create');
+
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/create/archive/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Download',
+               'method' => 'createFromArchive');
 
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/downloads/(\d+)/delete/$#',
                'base' => $base,
@@ -364,7 +471,17 @@ $ctl[] = array('regex' => '#^/api/p/([\-\w]+)/issues/create/$#',
                'model' => 'IDF_Views_Api',
                'method' => 'issueCreate');
 
+$ctl[] = array('regex' => '#^/api/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Api',
+               'method' => 'projectIndex');
+
 // ---------- FORGE ADMIN --------------------------------
+
+$ctl[] = array('regex' => '#^/admin/forge/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Admin',
+               'method' => 'forge');
 
 $ctl[] = array('regex' => '#^/admin/projects/$#',
                'base' => $base,
@@ -375,6 +492,11 @@ $ctl[] = array('regex' => '#^/admin/projects/(\d+)/$#',
                'base' => $base,
                'model' => 'IDF_Views_Admin',
                'method' => 'projectUpdate');
+
+$ctl[] = array('regex' => '#^/admin/projects/labels/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_Admin',
+               'method' => 'projectLabels');
 
 $ctl[] = array('regex' => '#^/admin/projects/create/$#',
                'base' => $base,
@@ -470,6 +592,11 @@ $ctl[] = array('regex' => '#^/preferences/email/ak/(.*)/$#',
                'base' => $base,
                'model' => 'IDF_Views_User',
                'method' => 'changeEmailDo');
+
+$ctl[] = array('regex' => '#^/preferences/email/(\d+)/delete/$#',
+               'base' => $base,
+               'model' => 'IDF_Views_User',
+               'method' => 'deleteMail');
 
 $ctl[] = array('regex' => '#^/preferences/key/(\d+)/delete/$#',
                'base' => $base,
