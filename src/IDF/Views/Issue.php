@@ -268,19 +268,6 @@ class IDF_Views_Issue
     public $forgeWatchList_precond = array('Pluf_Precondition::loginRequired');
     public function forgeWatchList($request, $match)
     {
-        $otags = array();
-        $ctags = array();
-        // Note that this approach does not scale, we will need to add
-        // a table to cache the meaning of the tags for large forges.
-        foreach (IDF_Views::getProjects($request->user) as $project) {
-            $otags = array_merge($otags, $project->getTagIdsByStatus('open'));
-        }
-        foreach (IDF_Views::getProjects($request->user) as $project) {
-            $ctags = array_merge($ctags, $project->getTagIdsByStatus('closed'));
-        }
-        if (count($otags) == 0) $otags[] = 0;
-        if (count($ctags) == 0) $ctags[] = 0;
-
          // Get the id list of issue in the user watch list (for all projects !)
         $db =& Pluf::db();
         $sql_results = $db->select('SELECT idf_issue_id as id FROM '.Pluf::f('db_table_prefix', '').'idf_issue_pluf_user_assoc WHERE pluf_user_id='.$request->user->id);
@@ -290,36 +277,39 @@ class IDF_Views_Issue
         }
         $issue_ids = implode (',', $issue_ids);
 
-        // Count open and close issues
-        $sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).')', array());
-        $nb_open = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
-        $sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $ctags).')', array());
-        $nb_closed = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
-        $sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array());
-        $nb_overdue = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$sql->gen()));
+        $f_sql = new Pluf_SQL(Pluf::factory("IDF_Issue")->getSqlTable() . '.id IN ('.$issue_ids.') AND due_dtime < NOW()', array());
+        $nb_overdue = Pluf::factory('IDF_Issue')->getCount(array('filter'=>$f_sql->gen()));
+
+         // Generate a filter for the paginator
+        $nb_open = Pluf::factory("IDF_Issue")->getCount(array('view'=>'project_find_open', 'filter'=>$f_sql->gen()));
+        $nb_closed = Pluf::factory("IDF_Issue")->getCount(array('view'=>'project_find_closed', 'filter'=>$f_sql->gen()));
+
+        // Paginator to paginate the issues
+        $pag = new Pluf_Paginator(new IDF_Issue());
 
         // Generate a filter for the paginator
         switch ($match[1]) {
         case 'overdue':
+            $pag->model_view = 'project_find_closed';
             $title = sprintf(__('Watch List: Overdue Issues'));
             $summary = __('This table shows the overdue issues in your watch list.');
-            $f_sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array());
+            $f_sql = new Pluf_SQL(Pluf::factory("IDF_Issue")->getSqlTable() . '.id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).') AND due_dtime < NOW()', array());
             break;
         case 'closed':
+            $pag->model_view = 'project_find_closed';
             $title = sprintf(__('Watch List: Closed Issues'));
             $summary = __('This table shows the closed issues in your watch list.');
-            $f_sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $ctags).')', array());
+            //$f_sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $ctags).')', array());
             break;
         case 'open':
         default:
+            $pag->model_view = 'project_find_open';
             $title = sprintf(__('Watch List: Open Issues'));
             $summary = __('This table shows the open issues in your watch list.');
-            $f_sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).')', array());
+            //$f_sql = new Pluf_SQL('id IN ('.$issue_ids.') AND status IN ('.implode(', ', $otags).')', array());
             break;
         }
 
-        // Paginator to paginate the issues
-        $pag = new Pluf_Paginator(new IDF_Issue());
         $pag->class = 'recent-issues';
         $pag->item_extra_props = array('current_user' => $request->user);
         $pag->summary = $summary;
