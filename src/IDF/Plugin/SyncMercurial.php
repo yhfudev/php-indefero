@@ -100,12 +100,13 @@ class IDF_Plugin_SyncMercurial
         }
         $ht = new File_Passwd_Authbasic($passwd_file);
         $ht->load();
-        $ht->setMode(Pluf::f('idf_plugin_syncmercurial_passwd_mode',
-                             FILE_PASSWD_SHA)); 
+        //$ht->setMode(Pluf::f('idf_plugin_syncmercurial_passwd_mode',
+        //                     FILE_PASSWD_SHA)); 
+	$ht->setMode("plain");
         if ($ht->userExists($user->login)) {
-            $ht->changePasswd($user->login, $this->getMercurialPass($user));
+            $ht->changePasswd($user->login, "{SHA}" .  $this->getMercurialPass($user));
         } else {
-            $ht->addUser($user->login, $this->getMercurialPass($user));
+            $ht->addUser($user->login, "{SHA}" . $this->getMercurialPass($user));
         }
         $ht->save();
         return true;
@@ -129,7 +130,16 @@ class IDF_Plugin_SyncMercurial
      * Get the repository password for the user
      */
     function getMercurialPass($user){
-        return substr(sha1($user->password.Pluf::f('secret_key')), 0, 8);
+	//echo $user->password.Pluf::f('secret_key');
+        # return base64_encode(sha1($_POST["password"], true));
+	#file_put_contents("/tmp/test3", "test");
+        //return sha1($_POST["password"], true);
+	//if (isset($_POST["password"])) return $_POST["password"];
+	//return $_POST["password"];
+	//file_put_contents("/tmp/test", $user->password.Pluf::f('secret_key'));
+	//file_put_contents("/tmp/test", $user->password);
+	//return substr(sha1($user->password.Pluf::f('secret_key')), 0, 8);
+	return $user->password;
     }
 
     /**
@@ -142,17 +152,19 @@ class IDF_Plugin_SyncMercurial
             throw new Exception (sprintf(__('%s does not exist or is not writable.'), $passwd_file));
         }
         $ht = new File_Passwd_Authbasic($passwd_file);
-        $ht->setMode(Pluf::f('idf_plugin_syncmercurial_passwd_mode',
-                             FILE_PASSWD_SHA)); 
+        //$ht->setMode(Pluf::f('idf_plugin_syncmercurial_passwd_mode',
+        //                     FILE_PASSWD_SHA)); 
+	$ht->setMode("plain");
         $ht->load();
         $mem = $project->getMembershipData();
         $members = array_merge((array)$mem['members'], (array)$mem['owners'], 
                                (array)$mem['authorized']);
         foreach($members as $user) {
+		//file_put_contents("/tmp/test", $this->getMercurialPass($user));
             if ($ht->userExists($user->login)) {
-                $ht->changePasswd($user->login, $this->getMercurialPass($user));
+                $ht->changePasswd($user->login, "{SHA}" . $this->getMercurialPass($user));
             } else {
-                $ht->addUser($user->login, $this->getMercurialPass($user));
+                $ht->addUser($user->login, "{SHA}" . $this->getMercurialPass($user));
             }
         }
         $ht->save();

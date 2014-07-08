@@ -158,11 +158,12 @@ class IDF_Plugin_SyncSvn
         }
         $ht = new File_Passwd_Authbasic($passwd_file);
         $ht->load();
-        $ht->setMode(FILE_PASSWD_SHA); 
+	$ht->setMode('plain');
+        //$ht->setMode(FILE_PASSWD_SHA); 
         if ($ht->userExists($user->login)) {
-            $ht->changePasswd($user->login, $this->getSvnPass($user));
+            $ht->changePasswd($user->login, '{SHA}' . $this->getSvnPass($user));
         } else {
-            $ht->addUser($user->login, $this->getSvnPass($user));
+            $ht->addUser($user->login, '{SHA}' . $this->getSvnPass($user));
         }
         $ht->save();
         return true;
@@ -183,7 +184,10 @@ class IDF_Plugin_SyncSvn
      * Get the repository password for the user
      */
     function getSvnPass($user){
-        return substr(sha1($user->password.Pluf::f('secret_key')), 0, 8);
+        //if (isset($_POST["password"])) return $_POST["password"];
+	//return $_POST["password"];
+	//return substr(sha1($user->password.Pluf::f('secret_key')), 0, 8);
+	return $user->password;
     }
 
     /**
@@ -196,16 +200,17 @@ class IDF_Plugin_SyncSvn
             return false;
         }
         $ht = new File_Passwd_Authbasic($passwd_file);
-        $ht->setMode(FILE_PASSWD_SHA); 
+        $ht->setMode('plain'); 
         $ht->load();
         $mem = $project->getMembershipData();
         $members = array_merge((array)$mem['members'], (array)$mem['owners'], 
                                (array)$mem['authorized']);
         foreach($members as $user) {
             if ($ht->userExists($user->login)) {
-                $ht->changePasswd($user->login, $this->getSvnPass($user));
+		
+                $ht->changePasswd($user->login, '{SHA}' . $this->getSvnPass($user));
             } else {
-                $ht->addUser($user->login, $this->getSvnPass($user));
+                $ht->addUser($user->login, '{SHA}' . $this->getSvnPass($user));
             }
         }
         $ht->save();
