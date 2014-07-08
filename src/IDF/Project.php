@@ -119,7 +119,8 @@ class IDF_Project extends Pluf_Model
 
                             'syntaxtheme' =>
                             array(
-                                'type' => 'Pluf_DB_Field_Text',
+                                /*'type' => 'Pluf_DB_Field_Text',*/
+                                'type' => 'Pluf_DB_Field_Varchar',
                                 'blank' => false,
                                 'verbose' => __('syntaxtheme'),
                                 'default' => "Default",
