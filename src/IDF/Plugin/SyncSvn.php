@@ -38,6 +38,7 @@ class IDF_Plugin_SyncSvn
         if (!Pluf::f('idf_plugin_syncsvn_authz_file', false) or
             !Pluf::f('idf_plugin_syncsvn_passwd_file', false) or
             !Pluf::f('idf_plugin_syncsvn_svn_path', false)) {
+            Pluf_Log::event(array("IDF_Plugin_SyncSvn::entry", 'SVN conf error. syncsvn_authz/passwd/svn_path', array($project)));
             return;
         }
         include_once 'File/Passwd/Authdigest.php'; // $ pear install File_Passwd
@@ -71,6 +72,7 @@ class IDF_Plugin_SyncSvn
     function processSvnCreate($project)
     {
         if ($project->getConf()->getVal('scm') != 'svn') {
+            Pluf_Log::event(array("IDF_Plugin_SyncSvn::processCreate", 'SVN exec not installed.', array($project)));
             return false;
         }
         $shortname = $project->shortname;
@@ -135,6 +137,7 @@ class IDF_Plugin_SyncSvn
             return;
         }
         if ($project->getConf()->getVal('scm') != 'svn') {
+            Pluf_Log::event(array("IDF_Plugin_SyncSvn::processDelete", 'SVN exec not installed.', array($project)));
             return false;
         }
         $this->SyncAccess($project); // exclude $project
