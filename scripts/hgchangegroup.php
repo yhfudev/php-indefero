@@ -54,8 +54,11 @@ Pluf_Dispatcher::loadControllers(Pluf::f('idf_views'));
  *       'env' => array_merge($_ENV, $_SERVER));
  *
  */
-$params = array('rel_dir' => $_ENV['PATH_INFO'],
+#$params = array('rel_dir' => $_ENV['PATH_INFO'],
+#                'env' => array_merge($_ENV, $_SERVER));
+$params = array('rel_dir' => '/home/mercurial/repositories',
                 'env' => array_merge($_ENV, $_SERVER));
+
 Pluf_Signal::send('hgchangegroup.php::run', 'hgchangegroup.php', $params);
 
 
