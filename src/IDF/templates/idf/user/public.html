@@ -44,6 +44,18 @@
 <td>{$member.date_joined|date}</td>
 </tr>
 </table>
+Projects:
+<table class="form">
+{foreach $projects as $p}
+{if $p.private == 0}
+<tr>
+<td>
+<a href="{url 'IDF_Views_Project::home', array($p.name)}">{$p.name} - {$p.shortdesc}</a>
+</td>
+</tr>
+{/if}
+{/foreach}
+</table>
 {/block}
 {block context}
 <div class="issue-submit-info">

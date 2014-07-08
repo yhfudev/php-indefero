@@ -32,7 +32,8 @@ class IDF_Form_ProjectConf extends Pluf_Form
     public function initFields($extra=array())
     {
         $this->project = $extra['project'];
-        $conf = $this->project->getConf();
+        $this->user = $extra["user"];
+	$conf = $this->project->getConf();
 
         // Basic part
         $this->fields['name'] = new Pluf_Form_Field_Varchar(array('required' => true,
@@ -56,8 +57,25 @@ class IDF_Form_ProjectConf extends Pluf_Form
                                                                  'label' => __('External URL'),
                                                                  'widget_attrs' => array('size' => '68'),
                                                                  'initial' => $conf->getVal('external_project_url'),
-        ));
 
+        ));
+	if ($this->user->administrator)
+	{
+		$this->fields['enableads'] = new Pluf_Form_Field_Boolean(
+                	    array('required' => false,
+                        	  'label' => __('Enable advertising'),
+                          	'initial' => $this->project->enableads,
+                          	'widget' => 'Pluf_Form_Widget_CheckboxInput',
+                          ));
+	} else {
+		$this->fields['enableads'] = new Pluf_Form_Field_Boolean(
+                            array('required' => false,
+                                  'label' => __('Enable advertising'),
+                                'initial' => $this->project->enableads,
+                                'widget' => 'Pluf_Form_Widget_CheckboxInput',
+				'widget_attrs' => array('disabled' => 'disabled')
+                          ));
+	}
         $tags = $this->project->get_tags_list();
         for ($i=1;$i<7;$i++) {
             $initial = '';
@@ -190,6 +208,8 @@ class IDF_Form_ProjectConf extends Pluf_Form
         $this->project->shortdesc = $this->cleaned_data['shortdesc'];
         $this->project->description = $this->cleaned_data['description'];
         $this->project->batchAssoc('IDF_Tag', $tagids);
+	if ($this->user->administrator)
+		$this->project->enableads = $this->cleaned_data['enableads'];
         $this->project->update();
 
         $conf = $this->project->getConf();

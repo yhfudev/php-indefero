@@ -22,6 +22,7 @@
 # ***** END LICENSE BLOCK ***** */
 
 Pluf::loadFunction('Pluf_Text_MarkDown_parse');
+Pluf::loadFunction('IDF_Template_safePregReplace');
 
 class IDF_Template_MarkdownForge extends Pluf_Template_Tag
 {

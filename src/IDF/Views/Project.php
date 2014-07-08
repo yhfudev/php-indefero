@@ -294,7 +294,7 @@ class IDF_Views_Project
     {
         $prj = $request->project;
         $title = sprintf(__('%s Project Summary'), (string) $prj);
-        $extra = array('project' => $prj);
+        $extra = array('project' => $prj, 'user' => $request->user);
         if ($request->method == 'POST') {
             $form = new IDF_Form_ProjectConf(array_merge($request->POST,
                                                          $request->FILES),

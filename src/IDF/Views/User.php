@@ -248,10 +248,20 @@ class IDF_Views_User
 
         $user = $users[0];
         $user_data = IDF_UserData::factory($user);
-        return Pluf_Shortcuts_RenderToResponse('idf/user/public.html',
+	//$projects = $request->user->getAllPermissions();
+	//print_r($request->user->permissions);
+	//print_r($projects[0]);
+	//$projects = array();
+        //foreach (IDF_Views::getProjects($request->user) as $project) {
+	//	$projects[] = $project; 
+	//}
+	$projects = IDF_Views::getProjects($request->user);
+	//print_r($projects);
+	return Pluf_Shortcuts_RenderToResponse('idf/user/public.html',
                                                array('page_title' => (string) $user,
                                                      'member' => $user,
                                                      'user_data' => $user_data,
+						     'projects' => $projects
                                                      ),
                                                $request);
     }

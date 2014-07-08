@@ -20,7 +20,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # ***** END LICENSE BLOCK ***** */
-
 require dirname(__FILE__).'/../src/IDF/conf/path.php';
 require 'Pluf.php';
 Pluf::start(dirname(__FILE__).'/../src/IDF/conf/idf.php');
