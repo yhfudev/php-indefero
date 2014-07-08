@@ -442,6 +442,11 @@ $ctl[] = array('regex' => '#^/p/([\-\w]+)/admin/$#',
                'model' => 'IDF_Views_Project',
                'method' => 'admin');
 
+$ctl[] = array('regex' => '#^/p/([\-\w]+)/admin/backup/$#',
+    'base' => $base,
+    'model' => 'IDF_Views_Project',
+    'method' => 'backup');
+
 $ctl[] = array('regex' => '#^/p/([\-\w]+)/admin/issues/$#',
                'base' => $base,
                'model' => 'IDF_Views_Project',
